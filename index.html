@@ -9,12 +9,12 @@
 <body>
     <audio id = "music" src = "Cash - Mark Karan, Scott Guberman, Angeline Saris, Jeremy Hoenig.mp3" controls autoplay></audio> 
     <input type = "range" class = "volumeSlider" min = "0" max = "1" step = "0.10" value = "0.5">
-        
     <header>
             <nav>
                 <div class = "logo">
                     <a href = "#"><img src = "https://cdn.worldvectorlogo.com/logos/st-1.svg" alt = "ST logo"> </a>
                 </div>
+
                 <div class = "lang-menu">
                     <div class = "selected-lang">
                         Language Options
@@ -35,14 +35,21 @@
                     </ul>
                 </div>
             </nav>
-        </header>
+        </header>   
 </body>
 </html>
 
 <main> 
-<h1 id = "greetings"> Hello</h1>
-<p id = "description"> Welcome to our app!</p>
+    <div id ="quiz-container">
+        <h1 id = "greetings">Welcome to the Better Version of Blooket!!!</h1>
+            <div id = "question-box"></div>
+            <div class = "desc-row">
+                <p id = "description">
+                    Answer questions to earn gold, then pick a bonus!<br>
+                    ------------------------------------
+                 </p>
+            <button id = "next-btn">Next</button>
+        </div>
+    </div>
 </main>
-
-
 <script src = "script.js"></script>
