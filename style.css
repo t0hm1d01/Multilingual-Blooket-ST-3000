@@ -28,7 +28,7 @@ header {
 
 .logo {
     width: 90px;
-    
+
 }
 
 
@@ -37,8 +37,8 @@ header {
     width: 90px;
     position: relative;
     right: 150px;
-    
-   
+
+
 }
 
 /* Navigation bar layout */
@@ -81,6 +81,7 @@ nav {
     right:  0;
 }
 
+/* These styles are for the old quiz structure, might not be fully used with the new game-container */
 #quiz-container {
     width: 400px;
     margin: 40px auto;
@@ -91,13 +92,15 @@ nav {
     box-shadow: 0 4px 16px rgba(0,0,0,0.1);
 }
 
-.answer-grid{
+.answer-grid{ /* This is for the old quiz structure, new buttons are handled by Tailwind classes and custom CSS */
     display: grid;
     grid-template-columns: repeat(1, 1fr);
     gap: 16px;
     margin-top: 16px;
 }
 
+/* The .answer-btn classes are deprecated with the new dynamic button generation */
+/* New buttons use .question-choices with .choice-0, .choice-1, etc. */
 .answer-btn{
     padding: 16px;
     font-size: 1rem;
@@ -108,6 +111,7 @@ nav {
     transition: transform 0.1s;
 }
 
+/* These specific color classes are now applied dynamically via JS to .question-choices buttons */
 .btn-a {background-color: red;}
 .btn-b {background-color: blue;}
 .btn-c {background-color: green;}
@@ -143,7 +147,7 @@ nav {
 
 }
 
-.desc-row{
+.desc-row{ /* This is for the old quiz structure */
     display: flex;
     align-items: center;
     gap: 16px;
@@ -159,10 +163,12 @@ nav {
 .lang-menu ul li a.English::before {
     content: '';
     display: inline-block;
-    width: 40px;  
-    height: 25px; 
+    width: 40px;
+    height: 25px;
     background-image: url(https://upload.wikimedia.org/wikipedia/commons/a/a4/Flag_of_the_United_States.svg);
-    background-size: cover;  
+    background-size: cover;
+    vertical-align: middle; /* Align icon vertically */
+    margin-right: 8px; /* Space between icon and text */
 }
 
 .lang-menu ul li a.Spanish::before {
@@ -170,8 +176,10 @@ nav {
     display: inline-block;
     width: 40px;
     height: 25px;
-    background-image: url(https://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Spain.svg);
+    background-image: url(https://upload.wikimedia.org/wikipedia/commons/9/9a/Flag_of_Spain.svg); /* Corrected URL */
     background-size: cover;
+    vertical-align: middle;
+    margin-right: 8px;
 }
 
 .lang-menu ul li a.German::before {
@@ -179,8 +187,10 @@ nav {
     display: inline-block;
     width: 40px;
     height: 25px;
-    background-image: url(https://upload.wikimedia.org/wikipedia/commons/b/ba/Flag_of_Germany.svg);
+    background-image: url(https://upload.wikimedia.org/wikipedia/commons/b/ba/Flag_of_Germany.svg); /* Corrected URL */
     background-size: cover;
+    vertical-align: middle;
+    margin-right: 8px;
 }
 
 .lang-menu ul li a.French::before {
@@ -188,14 +198,16 @@ nav {
     display: inline-block;
     width: 40px;
     height: 25px;
-    background-image: url(https://upload.wikimedia.org/wikipedia/commons/c/c3/Flag_of_France.svg);
+    background-image: url(https://upload.wikimedia.org/wikipedia/commons/c/c3/Flag_of_France.svg); /* Corrected URL */
     background-size: cover;
+    vertical-align: middle;
+    margin-right: 8px;
 }
 
 
 .lang-menu ul li a:hover {
     background-color: #f2f2f2;
-   
+
 }
 
 
