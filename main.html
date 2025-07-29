@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blooket-style Gold Rush</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            @apply bg-gradient-to-br from-blue-400 to-purple-600 min-h-screen flex items-center justify-center p-4;
+        }
+        .card {
+            @apply bg-white rounded-xl shadow-2xl p-8 max-w-lg w-full text-center;
+        }
+        .btn {
+            @apply bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 ease-in-out transform hover:scale-105;
+        }
+        .input-field {
+            @apply w-full p-3 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500;
+        }
+        .leaderboard-item {
+            @apply flex justify-between items-center py-2 px-4 bg-gray-100 rounded-md mb-2;
+        }
+        /* Custom scrollbar for leaderboard */
+        .leaderboard-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        .leaderboard-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .leaderboard-list::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        .leaderboard-list::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        .question-choices button {
+            @apply w-full bg-gray-200 text-gray-800 font-semibold py-3 px-4 rounded-lg mb-2 hover:bg-gray-300 transition duration-200;
+        }
+        .question-choices button.correct {
+            @apply bg-green-500 text-white;
+        }
+        .question-choices button.incorrect {
+            @apply bg-red-500 text-white;
+        }
+        .bonus-choice-btn {
+            @apply w-full bg-purple-500 text-white font-semibold py-3 px-4 rounded-lg mb-2 hover:bg-purple-600 transition duration-200;
+        }
+        .message-box {
+            @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+        }
+        .message-content {
+            @apply bg-white p-8 rounded-lg shadow-xl text-center;
+        }
+    </style>
+</head>
+<body>
+    <audio id="music" src="Cash - Mark Karan, Scott Guberman, Angeline Saris, Jeremy Hoenig.mp3" controls autoplay></audio>
+    <input type="range" class="volumeSlider" min="0" max="1" step="0.10" value="0.5">
+    <header>
+        <nav>
+            <div class="logo">
+                <a href="#"><img src="https://cdn.worldvectorlogo.com/logos/st-1.svg" alt="ST logo"> </a>
+            </div>
+
+            <div class="lang-menu">
+                <div class="selected-lang">
+                    Language Options
+                </div>
+                <ul>
+                    <li>
+                        <a href="#" class="English">English</a>
+                    </li>
+                    <li>
+                        <a href="#" class="Spanish">Spanish</a>
+                    </li>
+                    <li>
+                        <a href="#" class="German">German</a>
+                    </li>
+                    <li>
+                        <a href="#" class="French">French</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div id="game-container" class="card">
+            <div id="login-screen" class="space-y-6">
+                <h1 class="text-4xl font-extrabold text-gray-800 mb-6">Gold Rush Challenge!</h1>
+                <p class="text-gray-600 mb-6">Race against the clock to earn as much gold as you can in 5 minutes!</p>
+
+                <input type="text" id="username-input" placeholder="Enter your username" class="input-field">
+                <input type="password" id="pin-input" placeholder="Enter PIN (e.g., 1234)" class="input-field">
+                <p id="pin-display" class="text-lg font-semibold text-gray-700 mb-4"></p>
+                <button id="start-game-btn" class="btn w-full">Start Game</button>
+                <p id="error-message" class="text-red-500 text-sm mt-2 hidden">Please enter a username and a valid PIN.</p>
+            </div>
+
+            <div id="game-screen" class="hidden space-y-6">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Time Left: <span id="timer-display" class="text-blue-600">05:00</span></h2>
+                <p class="text-2xl font-semibold text-gray-700 mb-6">Current Gold: <span id="gold-display" class="text-yellow-500">0</span></p>
+
+                <div id="quiz-section" class="space-y-4">
+                    <p id="question-text" class="text-xl font-medium text-gray-700 mb-4"></p>
+                    <div id="answer-choices" class="grid grid-cols-1 gap-3">
+                        </div>
+                </div>
+
+                <div id="bonus-section" class="hidden space-y-4">
+                    <p class="text-xl font-medium text-gray-700 mb-4">Choose your bonus!</p>
+                    <div id="bonus-choices" class="grid grid-cols-1 gap-3">
+                        </div>
+                </div>
+            </div>
+
+            <div id="game-over-screen" class="hidden space-y-6">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Game Over!</h2>
+                <p class="text-2xl font-semibold text-gray-700 mb-6">Final Gold: <span id="final-gold-display" class="text-yellow-500">0</span></p>
+
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Leaderboard</h3>
+                <div id="leaderboard-list" class="leaderboard-list max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-3 mb-6">
+                    <p class="text-gray-500">Loading leaderboard...</p>
+                </div>
+                <button id="play-again-btn" class="btn w-full">Play Again</button>
+            </div>
+        </div>
+
+        <div id="message-box" class="message-box hidden">
+            <div class="message-content">
+                <p id="message-text" class="text-xl font-semibold text-gray-800 mb-4"></p>
+                <button id="message-ok-btn" class="btn">OK</button>
+            </div>
+        </div>
+
+        <div id="quiz-container">
+            <h1 id="greetings">Welcome to the Better Version of Blooket!!!</h1>
+            <div id="question-box"></div>
+            <div class="desc-row">
+                <p id="description">
+                    Answer questions to earn gold, then pick a bonus!<br>
+                    ------------------------------------
+                </p>
+                <button id="next-btn">Next</button>
+            </div>
+        </div>
+    </main>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase configuration and app ID are provided by the Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let userId = null; // To store the authenticated user ID
+        let generatedPin = ''; // The PIN generated for the current game session
+        let gold = 0; // Player's current gold
+        let timeLeft = 300; // 5 minutes in seconds
+        let timerInterval; // To store the timer interval ID
+        let gameRunning = false; // Flag to indicate if the game is active
+        let currentQuestionIndex = 0; // Track current question
+
+        // --- Game Data Classes (Converted from Java) ---
+
+        // ChoiceEffect Class
+        class ChoiceEffect {
+            constructor(description, type, value) {
+                this.description = description;
+                this.type = type;
+                this.value = value;
+            }
+
+            getDescription() {
+                return this.description;
+            }
+
+            getType() {
+                return this.type;
+            }
+
+            getValue() {
+                return this.value;
+            }
+
+            applyEffect(currentGold) {
+                if (this.type === 'PERCENTAGE_MULTIPLIER') {
+                    return currentGold * this.value;
+                } else {
+                    return currentGold + this.value;
+                }
+            }
+        }
+
+        // Question Class
+        class Question {
+            constructor(questionText, answerChoices, correctAnswer) {
+                this.questionText = questionText;
+                this.answerChoices = [...answerChoices]; // Create a copy
+                this.correctAnswer = correctAnswer;
+                this.shuffleChoices(); // Shuffle choices on creation
+            }
+
+            shuffleChoices() {
+                for (let i = this.answerChoices.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [this.answerChoices[i], this.answerChoices[j]] = [this.answerChoices[j], this.answerChoices[i]];
+                }
+            }
+
+            getQuestionText() {
+                return this.questionText;
+            }
+
+            getAnswerChoices() {
+                return [...this.answerChoices]; // Return a copy
+            }
+
+            getCorrectAnswer() {
+                return this.correctAnswer;
+            }
+
+            isCorrect(selectedAnswer) {
+                return this.correctAnswer.trim().toLowerCase() === selectedAnswer.trim().toLowerCase();
+            }
+        }
+
+        // --- Game Data Storage ---
+        let questionBank = [];
+        let allChoiceEffects = [];
+
+        // --- UI Element References ---
+        const loginScreen = document.getElementById('login-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const usernameInput = document.getElementById('username-input');
+        const pinInput = document.getElementById('pin-input');
+        const pinDisplay = document.getElementById('pin-display');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const errorMessage = document.getElementById('error-message');
+        const timerDisplay = document.getElementById('timer-display');
+        const goldDisplay = document.getElementById('gold-display');
+        const questionText = document.getElementById('question-text');
+        const answerChoicesDiv = document.getElementById('answer-choices');
+        const quizSection = document.getElementById('quiz-section');
+        const bonusSection = document.getElementById('bonus-section');
+        const bonusChoicesDiv = document.getElementById('bonus-choices');
+        const finalGoldDisplay = document.getElementById('final-gold-display');
+        const leaderboardList = document.getElementById('leaderboard-list');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+        const messageOkBtn = document.getElementById('message-ok-btn');
+
+        // --- Firebase Authentication ---
+        async function authenticateUser() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                userId = auth.currentUser?.uid || crypto.randomUUID(); // Get UID or generate a random one if anonymous
+                console.log("Firebase authenticated. User ID:", userId);
+                // Listen for leaderboard updates only after authentication
+                listenForLeaderboardUpdates();
+            } catch (error) {
+                console.error("Firebase authentication error:", error);
+                userId = crypto.randomUUID(); // Still generate a random ID for local use
+                console.log("Using a random user ID due to authentication failure:", userId);
+            }
+        }
+
+        // --- PIN Generation and Validation ---
+        function generatePin() {
+            // Generate a random 4-digit PIN
+            generatedPin = String(Math.floor(1000 + Math.random() * 9000));
+            pinDisplay.textContent = `Your game PIN: ${generatedPin}`;
+            pinInput.value = ''; // Clear previous input
+        }
+
+        function validatePin(inputPin) {
+            return inputPin === generatedPin;
+        }
+
+        // --- Timer Logic ---
+        function startTimer() {
+            timeLeft = 300; // 5 minutes
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        // --- Game Data Initialization (Converted from Java) ---
+        function initializeGameData() {
+            questionBank = [];
+            questionBank.push(new Question(
+                "What is the capital of France?",
+                ["Paris", "Berlin", "Madrid", "Rome"],
+                "Paris"
+            ));
+            questionBank.push(new Question(
+                "Which planet is known as the 'Red Planet'?",
+                ["Mars", "Earth", "Jupiter", "Venus"],
+                "Mars"
+            ));
+            questionBank.push(new Question(
+                "What is 7 + 8?",
+                ["15", "12", "16", "14"],
+                "15"
+            ));
+            questionBank.push(new Question(
+                "Who painted the Mona Lisa?",
+                ["Leonardo da Vinci", "Vincent van Gogh", "Pablo Picasso", "Claude Monet"],
+                "Leonardo da Vinci"
+            ));
+            questionBank.push(new Question(
+                "What is the largest ocean on Earth?",
+                ["Pacific Ocean", "Atlantic Ocean", "Indian Ocean", "Arctic Ocean"],
+                "Pacific Ocean"
+            ));
+            questionBank.push(new Question(
+                "What is the chemical symbol for water?",
+                ["H2O", "CO2", "O2", "N2"],
+                "H2O"
+            ));
+            questionBank.push(new Question(
+                "What is the fastest land animal?",
+                ["Cheetah", "Lion", "Gazelle", "Horse"],
+                "Cheetah"
+            ));
+            questionBank.push(new Question(
+                "How many continents are there?",
+                ["7", "5", "6", "8"],
+                "7"
+            ));
+            questionBank.push(new Question(
+                "What is the square root of 81?",
+                ["9", "8", "7", "10"],
+                "9"
+            ));
+            questionBank.push(new Question(
+                "Which gas do plants absorb from the atmosphere?",
+                ["Carbon Dioxide", "Oxygen", "Nitrogen", "Hydrogen"],
+                "Carbon Dioxide"
+            ));
+
+            allChoiceEffects = [];
+            allChoiceEffects.push(new ChoiceEffect("+200% Gold", 'PERCENTAGE_MULTIPLIER', 3.0));
+            allChoiceEffects.push(new ChoiceEffect("+300% Gold", 'PERCENTAGE_MULTIPLIER', 4.0));
+            allChoiceEffects.push(new ChoiceEffect("-99% Gold", 'PERCENTAGE_MULTIPLIER', 0.01));
+            allChoiceEffects.push(new ChoiceEffect("-20% Gold", 'PERCENTAGE_MULTIPLIER', 0.8));
+            allChoiceEffects.push(new ChoiceEffect("-50% Gold", 'PERCENTAGE_MULTIPLIER', 0.5));
+            allChoiceEffects.push(new ChoiceEffect("+250 Gold", 'FLAT_AMOUNT', 250.0));
+            allChoiceEffects.push(new ChoiceEffect("+10 Gold", 'FLAT_AMOUNT', 10.0));
+            allChoiceEffects.push(new ChoiceEffect("+500 Gold", 'FLAT_AMOUNT', 500.0));
+            allChoiceEffects.push(new ChoiceEffect("-100 Gold", 'FLAT_AMOUNT', -100.0));
+            allChoiceEffects.push(new ChoiceEffect("-200 Gold", 'FLAT_AMOUNT', -200.0));
+            allChoiceEffects.push(new ChoiceEffect("No Change", 'FLAT_AMOUNT', 0.0));
+        }
+
+        // --- Game Flow ---
+        function startGame() {
+            const username = usernameInput.value.trim();
+            const enteredPin = pinInput.value.trim();
+
+            if (!username || !enteredPin || !validatePin(enteredPin)) {
+                errorMessage.textContent = "Please enter a username and a valid PIN.";
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+            errorMessage.classList.add('hidden');
+
+            // Hide login, show game
+            loginScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            gameOverScreen.classList.add('hidden');
+            quizSection.classList.remove('hidden');
+            bonusSection.classList.add('hidden'); // Ensure bonus section is hidden
+
+            gold = 500.0; // Starting gold as per your Java code
+            goldDisplay.textContent = gold.toFixed(2);
+            gameRunning = true;
+            currentQuestionIndex = 0;
+            // Shuffle questions for each new game
+            questionBank.sort(() => Math.random() - 0.5);
+            startTimer();
+            displayQuestion();
+            console.log("Game started for user:", username, "with PIN:", enteredPin);
+        }
+
+        function displayQuestion() {
+            // If all questions are answered or time is up, end game
+            if (currentQuestionIndex >= questionBank.length || timeLeft <= 0) {
+                endGame();
+                return;
+            }
+
+            const currentQuestion = questionBank[currentQuestionIndex];
+            questionText.textContent = `Question ${currentQuestionIndex + 1}: ${currentQuestion.getQuestionText()}`;
+            answerChoicesDiv.innerHTML = ''; // Clear previous choices
+
+            currentQuestion.getAnswerChoices().forEach(choice => {
+                const button = document.createElement('button');
+                button.textContent = choice;
+                button.addEventListener('click', () => handleAnswer(choice, currentQuestion));
+                answerChoicesDiv.appendChild(button);
+            });
+        }
+
+        function handleAnswer(selectedAnswer, currentQuestion) {
+            // Disable all answer buttons to prevent multiple clicks
+            Array.from(answerChoicesDiv.children).forEach(button => {
+                button.disabled = true;
+                if (button.textContent === currentQuestion.getCorrectAnswer()) {
+                    button.classList.add('correct'); // Highlight correct answer
+                } else if (button.textContent === selectedAnswer) {
+                    button.classList.add('incorrect'); // Highlight incorrect answer
+                }
+            });
+
+            if (currentQuestion.isCorrect(selectedAnswer)) {
+                showMessage("Correct!", () => {
+                    gold += 100.0;
+                    goldDisplay.textContent = gold.toFixed(2);
+                    handleBonusChoice();
+                });
+            } else {
+                showMessage(`Incorrect. The correct answer was: ${currentQuestion.getCorrectAnswer()}`, () => {
+                    gold -= 50.0;
+                    if (gold < 0) gold = 0;
+                    goldDisplay.textContent = gold.toFixed(2);
+                    // Move to next question immediately if incorrect, no bonus
+                    currentQuestionIndex++;
+                    displayQuestion();
+                });
+            }
+        }
+
+        function handleBonusChoice() {
+            quizSection.classList.add('hidden'); // Hide quiz
+            bonusSection.classList.remove('hidden'); // Show bonus section
+            bonusChoicesDiv.innerHTML = ''; // Clear previous bonus choices
+
+            const availableChoices = [...allChoiceEffects];
+            // Shuffle and pick 3 random bonus options
+            availableChoices.sort(() => Math.random() - 0.5);
+            const selectedBonusOptions = availableChoices.slice(0, 3);
+
+            selectedBonusOptions.forEach((effect, index) => {
+                const button = document.createElement('button');
+                button.classList.add('bonus-choice-btn');
+                button.textContent = `${index + 1}. ${effect.getDescription()}`;
+                button.addEventListener('click', () => applyBonusEffect(effect));
+                bonusChoicesDiv.appendChild(button);
+            });
+        }
+
+        function applyBonusEffect(chosenEffect) {
+            const oldGold = gold;
+            gold = chosenEffect.applyEffect(gold);
+            if (gold < 0) gold = 0; // Gold cannot go below zero
+
+            showMessage(`You chose: ${chosenEffect.getDescription()}! Your gold changed from ${oldGold.toFixed(2)} to ${gold.toFixed(2)}.`, () => {
+                goldDisplay.textContent = gold.toFixed(2);
+                bonusSection.classList.add('hidden'); // Hide bonus
+                quizSection.classList.remove('hidden'); // Show quiz again
+                currentQuestionIndex++; // Move to next question
+                displayQuestion();
+            });
+        }
+
+
+        function endGame() {
+            gameRunning = false;
+            clearInterval(timerInterval); // Ensure timer stops
+            console.log("Game over. Final gold:", gold);
+
+            // Hide game, show game over/leaderboard
+            gameScreen.classList.add('hidden');
+            gameOverScreen.classList.remove('hidden');
+            finalGoldDisplay.textContent = gold.toFixed(2);
+
+            // Save score to Firestore
+            saveScore(usernameInput.value.trim(), gold);
+        }
+
+        function resetGame() {
+            // Reset state
+            gold = 0;
+            timeLeft = 300;
+            gameRunning = false;
+            clearInterval(timerInterval);
+            currentQuestionIndex = 0;
+
+            // Show login screen, hide others
+            loginScreen.classList.remove('hidden');
+            gameScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+
+            // Clear inputs and generate new PIN
+            usernameInput.value = '';
+            pinInput.value = '';
+            generatePin();
+            errorMessage.classList.add('hidden'); // Hide error message on reset
+        }
+
+        // --- Leaderboard Logic (Firestore) ---
+        async function saveScore(username, score) {
+            if (!userId) {
+                console.error("User not authenticated, cannot save score.");
+                return;
+            }
+            try {
+                // Public data for leaderboard
+                const leaderboardCollectionRef = collection(db, `artifacts/${appId}/public/data/leaderboard`);
+                await addDoc(leaderboardCollectionRef, {
+                    username: username,
+                    score: score,
+                    timestamp: serverTimestamp(), // Use server timestamp for consistent ordering
+                    userId: userId // Store userId for potential future features
+                });
+                console.log("Score saved successfully!");
+            } catch (e) {
+                console.error("Error adding document: ", e);
+            }
+        }
+
+        function listenForLeaderboardUpdates() {
+            // Query for top 5 scores, ordered by score descending
+            const q = query(collection(db, `artifacts/${appId}/public/data/leaderboard`), orderBy("score", "desc"), limit(5));
+
+            onSnapshot(q, (snapshot) => {
+                leaderboardList.innerHTML = ''; // Clear current leaderboard
+                if (snapshot.empty) {
+                    leaderboardList.innerHTML = '<p class="text-gray-500">No scores yet. Be the first!</p>';
+                    return;
+                }
+                snapshot.forEach((doc, index) => {
+                    const data = doc.data();
+                    const listItem = document.createElement('div');
+                    listItem.classList.add('leaderboard-item');
+                    listItem.innerHTML = `
+                        <span class="font-bold text-gray-800">${index + 1}. ${data.username}</span>
+                        <span class="text-yellow-600 font-semibold">${data.score.toFixed(2)} Gold</span>
+                    `;
+                    leaderboardList.appendChild(listItem);
+                });
+            }, (error) => {
+                console.error("Error listening to leaderboard updates:", error);
+                leaderboardList.innerHTML = '<p class="text-red-500">Error loading leaderboard.</p>';
+            });
+        }
+
+        // --- Custom Message Box (Replaces alert()) ---
+        function showMessage(text, callback) {
+            messageText.textContent = text;
+            messageBox.classList.remove('hidden');
+            messageOkBtn.onclick = () => {
+                messageBox.classList.add('hidden');
+                if (callback) {
+                    callback();
+                }
+            };
+        }
+
+        // --- Event Listeners ---
+        startGameBtn.addEventListener('click', startGame);
+        playAgainBtn.addEventListener('click', resetGame);
+        // No more earnGoldBtn, as quiz handles gold now
+
+        // Initialize on page load
+        window.onload = async () => {
+            initializeGameData(); // Load quiz questions and effects
+            await authenticateUser(); // Authenticate first
+            generatePin(); // Generate initial PIN
+            // Initial leaderboard load is handled by listenForLeaderboardUpdates() after auth
+        };
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
