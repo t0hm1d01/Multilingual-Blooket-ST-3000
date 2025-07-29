@@ -1,0 +1,468 @@
+<script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+            apiKey: "AIzaSyC9XoNDsTaqHcCn3gv9rU9fHQbOeH-10U0",
+            authDomain: "multilingual-bloocket-3000.firebaseapp.com",
+            projectId: "multilingual-bloocket-3000",
+            storageBucket: "multilingual-bloocket-3000.firebasestorage.app",
+            messagingSenderId: "566691790847",
+            appId: "1:566691790847:web:c0345cb1a99467dd4631ca",
+            measurementId: "G-KNBY3BWK3X"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        // const analytics = getAnalytics(app); // We don't use analytics in the game logic, so commenting out for simplicity
+        const db = getFirestore(app); // Initialize Firestore
+        const auth = getAuth(app); // Initialize Authentication
+
+        let userId = null; // To store the authenticated user ID
+        let generatedPin = ''; // The PIN generated for the current game session
+        let gold = 0; // Player's current gold
+        let timeLeft = 300; // 5 minutes in seconds
+        let timerInterval; // To store the timer interval ID
+        let gameRunning = false; // Flag to indicate if the game is active
+        let currentQuestionIndex = 0; // Track current question
+        let username = ''; // Store the username
+
+        // --- UI Element References ---
+        const loginScreen = document.getElementById('login-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const usernameInput = document.getElementById('username-input');
+        const pinInput = document.getElementById('pin-input');
+        const pinDisplay = document.getElementById('pin-display');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const errorMessage = document.getElementById('error-message');
+        const timerDisplay = document.getElementById('timer-display');
+        const goldDisplay = document.getElementById('gold-display');
+        const questionText = document.getElementById('question-text');
+        const answerChoicesDiv = document.getElementById('answer-choices');
+        const bonusSection = document.getElementById('bonus-section');
+        const bonusChoicesDiv = document.getElementById('bonus-choices');
+        const finalGoldDisplay = document.getElementById('final-gold-display');
+        const leaderboardList = document.getElementById('leaderboard-list');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+        const messageOkBtn = document.getElementById('message-ok-btn');
+        const quizSection = document.getElementById('quiz-section');
+
+        // References for language switching elements
+        const greetingsElement = document.getElementById('greetings');
+        const descriptionElement = document.getElementById('description');
+        const langLinks = document.querySelectorAll('.lang-menu ul li a');
+
+        // --- Game Data Classes (Converted from Java) ---
+        class ChoiceEffect {
+            constructor(description, type, value) {
+                this.description = description;
+                this.type = type;
+                this.value = value;
+            }
+
+            getDescription() {
+                return this.description;
+            }
+
+            getType() {
+                return this.type;
+            }
+
+            getValue() {
+                return this.value;
+            }
+
+            applyEffect(currentGold) {
+                if (this.type === 'PERCENTAGE_MULTIPLIER') {
+                    let newGold = currentGold * this.value;
+                    // Ensure gold doesn't go below zero if it's a negative multiplier
+                    return newGold < 0 ? 0 : newGold;
+                } else {
+                    let newGold = currentGold + this.value;
+                    // Ensure gold doesn't go below zero for flat amount deductions
+                    return newGold < 0 ? 0 : newGold;
+                }
+            }
+        }
+
+        class Question {
+            constructor(questionText, answerChoices, correctAnswer) {
+                this.questionText = questionText;
+                // Create a copy and shuffle choices immediately upon creation
+                this.answerChoices = [...answerChoices];
+                this.correctAnswer = correctAnswer;
+                this.shuffleChoices();
+            }
+
+            shuffleChoices() {
+                for (let i = this.answerChoices.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [this.answerChoices[i], this.answerChoices[j]] = [this.answerChoices[j], this.answerChoices[i]];
+                }
+            }
+
+            getQuestionText() {
+                return this.questionText;
+            }
+
+            getAnswerChoices() {
+                return [...this.answerChoices]; // Return a copy to prevent external modification
+            }
+
+            getCorrectAnswer() {
+                return this.correctAnswer;
+            }
+
+            isCorrect(selectedAnswer) {
+                return this.correctAnswer.trim().toLowerCase() === selectedAnswer.trim().toLowerCase();
+            }
+        }
+
+        // --- Game Data Storage ---
+        let questionBank = [];
+        let allChoiceEffects = [];
+
+        const LanguageData = {
+            English: {
+                greeting: "Welcome to the Better Version of Blooket!!!",
+                description: "Answer questions to earn gold, then pick a bonus!",
+            },
+            Spanish: {
+                greeting: "¡¡¡Bienvenido a la mejor versión de Blooket!!!",
+                description: "Responde preguntas para ganar oro y ¡luego elige un bono!",
+            },
+            German: {
+                greeting: "Willkommen zur besseren Version von Blooket!!!",
+                description: "Beantworten Sie Fragen, um Gold zu verdienen, und wählen Sie dann einen Bonus aus!",
+            },
+            French: {
+                greeting: "Bienvenue dans la meilleure version de Blooket !!!",
+                description: "Répondez aux questions pour gagner de l'or, puis choisissez un bonus !",
+            },
+        };
+
+        // --- Initialization ---
+        function initializeGameData() {
+            // Quiz Questions (from script.js and Java reference)
+            questionBank = [
+                new Question("What is the capital of France?", ["Paris", "Berlin", "Madrid", "Rome"], "Paris"),
+                new Question("Which planet is known as the 'Red Planet'?", ["Mars", "Earth", "Jupiter", "Venus"], "Mars"),
+                new Question("What is 7 + 8?", ["15", "12", "16", "14"], "15"),
+                new Question("Who painted the Mona Lisa?", ["Vincent van Gogh", "Pablo Picasso", "Leonardo da Vinci", "Claude Monet"], "Leonardo da Vinci"),
+                new Question("What is the largest ocean on Earth?", ["Atlantic Ocean", "Indian Ocean", "Arctic Ocean", "Pacific Ocean"], "Pacific Ocean"),
+                new Question("What is the chemical symbol for water?", ["H2O", "CO2", "O2", "N2"], "H2O"),
+                new Question("What is the fastest land animal?", ["Cheetah", "Lion", "Horse", "Gazelle"], "Cheetah"),
+                new Question("How many continents are there?", ["5", "6", "7", "8"], "7"),
+                new Question("What is the square root of 81?", ["7", "8", "9", "10"], "9"),
+                new Question("Which gas do plants absorb from the atmosphere?", ["Oxygen", "Carbon Dioxide", "Nitrogen", "Hydrogen"], "Carbon Dioxide")
+            ];
+
+            // Bonus Choice Effects (from MainBlooketConsleQuiz.java and ChoiceEffects.java concepts)
+            allChoiceEffects = [
+                new ChoiceEffect("+200% Gold", 'PERCENTAGE_MULTIPLIER', 3.0), // 100% current + 200% bonus = 300% total
+                new ChoiceEffect("+300% Gold", 'PERCENTAGE_MULTIPLIER', 4.0), // 100% current + 300% bonus = 400% total
+                new ChoiceEffect("-99% Gold", 'PERCENTAGE_MULTIPLIER', 0.01), // Retain 1%
+                new ChoiceEffect("-20% Gold", 'PERCENTAGE_MULTIPLIER', 0.8), // Retain 80%
+                new ChoiceEffect("-50% Gold", 'PERCENTAGE_MULTIPLIER', 0.5), // Retain 50%
+                new ChoiceEffect("+250 Gold", 'FLAT_AMOUNT', 250.0),
+                new ChoiceEffect("+10 Gold", 'FLAT_AMOUNT', 10.0),
+                new ChoiceEffect("+500 Gold", 'FLAT_AMOUNT', 500.0),
+                new ChoiceEffect("-100 Gold", 'FLAT_AMOUNT', -100.0),
+                new ChoiceEffect("-200 Gold", 'FLAT_AMOUNT', -200.0),
+                new ChoiceEffect("No Change", 'FLAT_AMOUNT', 0.0)
+            ];
+        }
+
+        // --- Authentication ---
+        async function authenticateUser() {
+            try {
+                const userCredential = await signInAnonymously(auth);
+                userId = userCredential.user.uid;
+                console.log("Authenticated as:", userId);
+                listenForLeaderboardUpdates(); // Start listening after authentication
+            } catch (error) {
+                console.error("Authentication error:", error);
+                showMessage("Authentication failed. Please check your console for details.");
+            }
+        }
+
+        // --- PIN Generation and Validation ---
+        function generatePin() {
+            generatedPin = Math.floor(1000 + Math.random() * 9000).toString(); // 4-digit PIN
+            pinDisplay.textContent = `Game PIN: ${generatedPin}`;
+        }
+
+        // --- Game Flow Functions ---
+        function startGame() {
+            username = usernameInput.value.trim();
+            const enteredPin = pinInput.value.trim();
+
+            if (!username) {
+                errorMessage.textContent = "Please enter a username.";
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+            if (enteredPin !== generatedPin) {
+                errorMessage.textContent = "Incorrect PIN. Please try again.";
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            errorMessage.classList.add('hidden');
+            loginScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            gameOverScreen.classList.add('hidden');
+
+            gold = 0;
+            timeLeft = 300; // Reset timer to 5 minutes
+            currentQuestionIndex = 0;
+            gameRunning = true;
+            updateGoldDisplay();
+            updateTimerDisplay();
+            shuffleQuestionBank();
+            displayQuestion();
+            startTimer();
+        }
+
+        function resetGame() {
+            gameOverScreen.classList.add('hidden');
+            loginScreen.classList.remove('hidden');
+            usernameInput.value = '';
+            pinInput.value = '';
+            generatePin(); // Generate a new PIN for the new game
+            leaderboardList.innerHTML = '<p class="text-gray-500">Loading leaderboard...</p>'; // Clear leaderboard and show loading
+            stopTimer(); // Ensure timer is stopped if resetGame is called after game over
+        }
+
+        function endGame() {
+            gameRunning = false;
+            stopTimer();
+            gameScreen.classList.add('hidden');
+            gameOverScreen.classList.remove('hidden');
+            finalGoldDisplay.textContent = gold.toFixed(2);
+            submitScore(username, gold); // Submit score to Firebase
+        }
+
+        // --- Quiz Functions ---
+        function shuffleQuestionBank() {
+            for (let i = questionBank.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [questionBank[i], questionBank[j]] = [questionBank[j], questionBank[i]];
+            }
+        }
+
+        function displayQuestion() {
+            if (currentQuestionIndex < questionBank.length) {
+                const question = questionBank[currentQuestionIndex];
+                questionText.textContent = question.getQuestionText();
+                answerChoicesDiv.innerHTML = ''; // Clear previous choices
+
+                question.getAnswerChoices().forEach((choice, index) => {
+                    const button = document.createElement('button');
+                    button.textContent = choice;
+                    button.classList.add('question-choices');
+                    button.classList.add('btn'); // Apply general button styling
+                    button.classList.add(`choice-${index}`); // Add specific class for color
+                    button.addEventListener('click', () => handleAnswer(choice, question.getCorrectAnswer(), button));
+                    answerChoicesDiv.appendChild(button);
+                });
+
+                quizSection.classList.remove('hidden');
+                bonusSection.classList.add('hidden');
+            } else {
+                // All questions answered, end the game
+                endGame();
+            }
+        }
+
+        function handleAnswer(selectedChoice, correctAnswer, clickedButton) {
+            // Disable all answer buttons after one is clicked
+            Array.from(answerChoicesDiv.children).forEach(button => button.disabled = true);
+
+            const isCorrect = (selectedChoice.trim().toLowerCase() === correctAnswer.trim().toLowerCase());
+
+            if (isCorrect){
+                clickedButton.classList.add('correct');
+                gold += 100.0;
+                showMessage("Correct! You earned 100 Gold!", () => {
+                    displayBonusChoices();
+                });
+            } else {
+                clickedButton.classList.add('incorrect');
+                // Highlight the correct answer
+                Array.from(answerChoicesDiv.children).forEach(button => {
+                    if (button.textContent.trim().toLowerCase() === correctAnswer.trim().toLowerCase()) {
+                        button.classList.add('correct');
+                    }
+                });
+                gold -= 50.0;
+                if (gold < 0) gold = 0; // Gold cannot go below zero
+                showMessage(`Incorrect. The correct answer was: ${correctAnswer}. You lost 50 Gold.`, () => {
+                    displayBonusChoices();
+                });
+            }
+            updateGoldDisplay();
+        }
+
+        function displayBonusChoices() {
+            quizSection.classList.add('hidden');
+            bonusSection.classList.remove('hidden');
+            bonusChoicesDiv.innerHTML = ''; // Clear previous choices
+
+            // Select 3 random unique bonus options
+            const shuffledEffects = [...allChoiceEffects].sort(() => 0.5 - Math.random());
+            const selectedBonusOptions = shuffledEffects.slice(0, 3);
+
+            selectedBonusOptions.forEach(effect => {
+                const button = document.createElement('button');
+                button.textContent = effect.getDescription();
+                button.classList.add('bonus-choice-btn');
+                button.classList.add('btn'); // Apply general button styling
+                button.addEventListener('click', () => handleBonusChoice(effect));
+                bonusChoicesDiv.appendChild(button);
+            });
+        }
+
+        function handleBonusChoice(chosenEffect) {
+            const oldGold = gold;
+            gold = chosenEffect.applyEffect(gold);
+            updateGoldDisplay();
+
+            showMessage(`You chose: ${chosenEffect.getDescription()}! Your gold changed from ${oldGold.toFixed(2)} to ${gold.toFixed(2)}.`, () => {
+                currentQuestionIndex++;
+                displayQuestion(); // Move to the next question
+            });
+        }
+
+        // --- Timer Functions ---
+        function startTimer() {
+            clearInterval(timerInterval); // Clear any existing timer
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateGoldDisplay() {
+            goldDisplay.textContent = gold.toFixed(2);
+        }
+
+        // --- Leaderboard Functions ---
+        async function submitScore(username, score) {
+            try {
+                await addDoc(collection(db, "leaderboard"), {
+                    username: username,
+                    score: score,
+                    timestamp: serverTimestamp()
+                });
+                console.log("Score submitted successfully!");
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                showMessage("Failed to submit score. Please check your internet connection and Firebase setup.");
+            }
+        }
+
+        function listenForLeaderboardUpdates() {
+            const q = query(collection(db, "leaderboard"), orderBy("score", "desc"), limit(5));
+            onSnapshot(q, (snapshot) => {
+                leaderboardList.innerHTML = ''; // Clear current leaderboard
+                if (snapshot.empty) {
+                    leaderboardList.innerHTML = '<p class="text-gray-500">No scores yet. Be the first!</p>';
+                    return;
+                }
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const listItem = document.createElement('div');
+                    listItem.classList.add('leaderboard-item');
+                    listItem.innerHTML = `
+                        <span class="font-semibold">${data.username}</span>
+                        <span class="text-yellow-600 font-semibold">${data.score.toFixed(2)} Gold</span>
+                    `;
+                    leaderboardList.appendChild(listItem);
+                });
+            }, (error) => {
+                console.error("Error listening to leaderboard updates:", error);
+                leaderboardList.innerHTML = '<p class="text-red-500">Error loading leaderboard.</p>';
+            });
+        }
+
+        // --- Custom Message Box (Replaces alert()) ---
+        function showMessage(text, callback) {
+            messageText.textContent = text;
+            messageBox.classList.remove('hidden');
+            messageOkBtn.onclick = () => {
+                messageBox.classList.add('hidden');
+                if (callback) {
+                    callback();
+                }
+            };
+        }
+
+        // --- Language Switching ---
+        function changeLanguage(languageCode) {
+            const data = LanguageData[languageCode];
+            if (data) {
+                greetingsElement.textContent = data.greeting;
+                descriptionElement.textContent = data.description;
+            }
+        }
+
+        langLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const languageCode = e.target.className;
+                changeLanguage(languageCode);
+            });
+        });
+
+        // --- Music Control ---
+        const music = document.getElementById('music');
+        const volumeSlider = document.querySelector('.volumeSlider');
+
+        // Play music automatically and unmute on first user interaction with the body
+        let hasInteracted = false;
+        document.body.addEventListener('click', function() {
+            if (!hasInteracted) {
+                music.muted = false;
+                music.play().catch(e => console.error("Error playing music:", e));
+                hasInteracted = true;
+            }
+        }, { once: true }); // Ensure this runs only once
+
+        volumeSlider.addEventListener('input', function() {
+            music.volume = this.value;
+        });
+
+
+        // --- Event Listeners ---
+        startGameBtn.addEventListener('click', startGame);
+        playAgainBtn.addEventListener('click', resetGame);
+
+        // Initialize on page load
+        window.onload = async () => {
+            initializeGameData(); // Load quiz questions and effects
+            await authenticateUser(); // Authenticate first with Firebase
+            generatePin(); // Generate initial PIN
+            // Initial leaderboard load is handled by listenForLeaderboardUpdates() after auth
+            changeLanguage('English'); // Set initial language
+        };
+    </script> 
