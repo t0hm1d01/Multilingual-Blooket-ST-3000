@@ -2,15 +2,26 @@
 @import url(https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap);
 @import url(https://necolas.github.io/normalize.css/8.0.1/normalize.css);
 
-
 body {
     font-family: "Roboto Condensed", sans-serif;
     color: black;
+    display: flex; /* Use flexbox for overall layout */
+    flex-direction: column; /* Stack header, main, etc. vertically */
+    min-height: 100vh; /* Full viewport height */
+    background-color: #f3f4f6; /* Light gray background */
 }
 
+/* Ensure main content is centered and takes available space */
+main.container {
+    flex-grow: 1; /* Allows main to take up available space */
+    display: flex; /* Use flexbox within main for game/leaderboard layout */
+    justify-content: center; /* Center content horizontally */
+    align-items: center; /* Center content vertically */
+    padding: 1rem; /* Add some padding */
+}
 
 *{
-    box-sizing: border-box
+    box-sizing: border-box;
 }
 
 a{
@@ -19,202 +30,266 @@ a{
 
 /* styling the header */
 header {
-    background-color: lightgray;
+    background-color: #90b2b4;
     height: 110px;
     padding: 10px;
-}
-
-
-
-.logo {
-    width: 90px;
-
-}
-
-
-/* logo image size */
-.logo img {
-    width: 90px;
-    position: relative;
-    right: 150px;
-
-
+    width: 100%; /* Full width header */
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Center content horizontally */
 }
 
 /* Navigation bar layout */
 nav {
-    width: 960px;
-    margin: 0 auto;
+    width: 960px; /* Max width for nav content */
     display: flex;
     justify-content: space-between;
+    align-items: center;
+    position: relative; /* For absolute positioning of volume/lang */
 }
 
+.logo {
+    width: 90px;
+}
 
+/* logo image size */
+.logo img {
+    width: 90px;
+    /* position: relative; Remove absolute positioning from here */
+    /* right: 150px; */
+}
 
+/* Language Menu */
 .lang-menu{
-    margin-top: 25px;
+    margin-top: 0; /* Adjust margin */
     position: relative;
+    z-index: 10; /* Ensure it's above other elements */
 }
-
-
 
 .selected-lang {
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     width: 100px;
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    border-radius: 5px;
+    background-color: white;
+    align-items: center;
 }
 
-
-
-/* creates the dropdown menu */
 .lang-menu ul{
     margin: 0;
     padding: 0;
     background-color: white;
     border: 1px solid grey;
-    box-shadow: 0px 1px 10px rgba(0, 0, 0.2,);
+    box-shadow: 0px 1px 10px rgba(0, 0, 0.1); /* Corrected rgba syntax */
     border-radius: 5px;
     display: none;
     position: absolute;
-    top: 40px;
+    top: 45px; /* Adjust dropdown position */
     right:  0;
-}
-
-/* These styles are for the old quiz structure, might not be fully used with the new game-container */
-#quiz-container {
-    width: 400px;
-    margin: 40px auto;
-    padding: 24px;
-    background: #f9f9f9;
-    border: 2px solid #333;
-    border-radius: 12px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-}
-
-.answer-grid{ /* This is for the old quiz structure, new buttons are handled by Tailwind classes and custom CSS */
-    display: grid;
-    grid-template-columns: repeat(1, 1fr);
-    gap: 16px;
-    margin-top: 16px;
-}
-
-/* The .answer-btn classes are deprecated with the new dynamic button generation */
-/* New buttons use .question-choices with .choice-0, .choice-1, etc. */
-.answer-btn{
-    padding: 16px;
-    font-size: 1rem;
-    border: none;
-    border-radius: 8px;
-    color : #fff;
-    cursor: pointer;
-    transition: transform 0.1s;
-}
-
-/* These specific color classes are now applied dynamically via JS to .question-choices buttons */
-.btn-a {background-color: red;}
-.btn-b {background-color: blue;}
-.btn-c {background-color: green;}
-.btn-d {background-color: yellow;}
-
-.answer-btn:active {
-    transform: scale (0.97);
+    min-width: 150px;
 }
 
 .lang-menu ul li {
     list-style: none;
 }
 
-
 .lang-menu ul li a {
-    width: 140px;
     display: block;
-    padding: 5px 10px;
-}
-
-/*styles the slider */
-.volumeSlider{
-    cursor: pointer;
-    display: -webkit-inline-box;
-    display: -ms-inline-flexbox;
-    display: inline-flex;
-    -webkit-box-orient: horizontal;
-    -webkit-box-direction: reverse;
-    align-items: center;
-    position: absolute;
-    top: 50px;
-    right: 15px;
-
-}
-
-.desc-row{ /* This is for the old quiz structure */
+    padding: 8px 12px;
+    color: #333;
+    white-space: nowrap; /* Prevent text wrapping */
     display: flex;
     align-items: center;
-    gap: 16px;
 }
-
-#description {
-    margin: 0;
-}
-
-
-
-/* Flag icons for each language option */
-.lang-menu ul li a.English::before {
-    content: '';
-    display: inline-block;
-    width: 40px;
-    height: 25px;
-    background-image: url(https://upload.wikimedia.org/wikipedia/commons/a/a4/Flag_of_the_United_States.svg);
-    background-size: cover;
-    vertical-align: middle; /* Align icon vertically */
-    margin-right: 8px; /* Space between icon and text */
-}
-
-.lang-menu ul li a.Spanish::before {
-    content: '';
-    display: inline-block;
-    width: 40px;
-    height: 25px;
-    background-image: url(https://upload.wikimedia.org/wikipedia/commons/9/9a/Flag_of_Spain.svg); /* Corrected URL */
-    background-size: cover;
-    vertical-align: middle;
-    margin-right: 8px;
-}
-
-.lang-menu ul li a.German::before {
-    content: '';
-    display: inline-block;
-    width: 40px;
-    height: 25px;
-    background-image: url(https://upload.wikimedia.org/wikipedia/commons/b/ba/Flag_of_Germany.svg); /* Corrected URL */
-    background-size: cover;
-    vertical-align: middle;
-    margin-right: 8px;
-}
-
-.lang-menu ul li a.French::before {
-    content: '';
-    display: inline-block;
-    width: 40px;
-    height: 25px;
-    background-image: url(https://upload.wikimedia.org/wikipedia/commons/c/c3/Flag_of_France.svg); /* Corrected URL */
-    background-size: cover;
-    vertical-align: middle;
-    margin-right: 8px;
-}
-
 
 .lang-menu ul li a:hover {
     background-color: #f2f2f2;
-
 }
-
 
 .lang-menu:hover ul{
     display: block;
 }
 
+/* Flag icons for each language option */
+.lang-menu ul li a.English::before,
+.lang-menu ul li a.Spanish::before,
+.lang-menu ul li a.German::before,
+.lang-menu ul li a.French::before {
+    content: '';
+    display: inline-block;
+    width: 25px; /* Smaller flag size */
+    height: 18px;
+    background-size: cover;
+    vertical-align: middle;
+    margin-right: 8px;
+    border: 1px solid #eee; /* Light border for flags */
+}
+
+.lang-menu ul li a.English::before { background-image: url(https://upload.wikimedia.org/wikipedia/commons/a/a4/Flag_of_the_United_States.svg); }
+.lang-menu ul li a.Spanish::before { background-image: url(https://upload.wikimedia.org/wikipedia/commons/9/9a/Flag_of_Spain.svg); }
+.lang-menu ul li a.German::before { background-image: url(https://upload.wikimedia.org/wikipedia/commons/b/ba/Flag_of_Germany.svg); }
+.lang-menu ul li a.French::before { background-image: url(https://upload.wikimedia.org/wikipedia/commons/c/c3/Flag_of_France.svg); }
+
+/* Volume Slider */
+.volumeSlider{
+    display: flex; /* Use flex for alignment */
+    align-items: center;
+    gap: 8px;
+    position: absolute;
+    top: 50%; /* Center vertically in header */
+    right: 110px;
+    transform: translateY(-50%);
+    /* Adjust for vertical centering */
+}
+.volumeSlider input[type="range"] {
+    width: 100px; /* Adjust slider width */
+}
+
+/* General Button Styles (used with Tailwind's .btn class) */
+.btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+    border: none;
+    color: white; /* Default text color for buttons */
+}
+
+.btn:hover {
+    transform: translateY(-2px); /* Slight lift on hover */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+/* Specific Button Colors */
+.btn-blue { background-color: #3b82f6; } /* Tailwind blue-500 */
+.btn-blue:hover { background-color: #2563eb; } /* Tailwind blue-600 */
+
+.btn-green { background-color: #10b981; } /* Tailwind green-500 */
+.btn-green:hover { background-color: #059669; } /* Tailwind green-600 */
+
+.btn-purple { background-color: #8b5cf6; } /* Tailwind purple-500 */
+.btn-purple:hover { background-color: #7c3aed; } /* Tailwind purple-600 */
+
+.btn-gray { background-color: #6b7280; } /* Tailwind gray-500 */
+.btn-gray:hover { background-color: #4b5563; } /* Tailwind gray-600 */
+
+
+/* Input Field Styles */
+.input-field {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 16px;
+    border: 1px solid #d1d5db; /* Tailwind gray-300 */
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.input-field:focus {
+    outline: none;
+    border-color: #6366f1; /* Tailwind indigo-500 */
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3); /* Tailwind indigo-500 with opacity */
+}
+
+
+/* Game Screen Layout */
+#game-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 600px; /* Adjust max-width as needed */
+}
+
+#leaderboard-section {
+    min-width: 250px; /* Fixed width for leaderboard */
+    max-height: 500px; /* Max height to allow scrolling */
+    overflow-y: auto; /* Enable vertical scrolling */
+}
+
+.leaderboard-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px dashed #e5e7eb; /* Tailwind gray-200 */
+}
+.leaderboard-item:last-child {
+    border-bottom: none;
+}
+
+/* Quiz Section (Answers) */
+.question-choices {
+    width: 100%;
+    padding: 16px;
+    font-size: 1.1rem;
+    border-radius: 8px;
+    border: none;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+}
+
+/* Specific colors for question choices, applied dynamically via JS */
+.question-choices.choice-0 { background-color: #ef4444; } /* Red */
+.question-choices.choice-1 { background-color: #3b82f6; } /* Blue */
+.question-choices.choice-2 { background-color: #22c55e; } /* Green */
+.question-choices.choice-3 { background-color: #eab308; } /* Yellow */
+
+.question-choices:hover {
+    filter: brightness(1.1); /* Slightly brighter on hover */
+}
+
+.question-choices.correct {
+    background-color: #16a34a; /* Darker green for correct */
+    border: 2px solid #065f46;
+}
+
+.question-choices.incorrect {
+    background-color: #dc2626; /* Darker red for incorrect */
+    border: 2px solid #991b1b;
+}
+
+.question-choices:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Bonus Choice Buttons */
+.bonus-choice-btn {
+    width: 100%;
+    padding: 16px;
+    font-size: 1.1rem;
+    border-radius: 8px;
+    background-color: #6366f1; /* Indigo */
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+    border: none;
+}
+
+.bonus-choice-btn:hover {
+    background-color: #4f46e5; /* Darker indigo */
+}
+
+/* Hidden Utility Class */
+.hidden {
+    display: none !important;
+}
+
+/* Styles for the message box */
+#message-box {
+    z-index: 100; /* Ensure it's on top */
+}
+
 #music {
-    display: none;
+    display: none; /* Hide the audio element */
 }
