@@ -1,10 +1,114 @@
-<script type="module">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Blooket</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+    <header>
+        <nav>
+            <div class="logo">
+                <img src="https://www.blooket.com/static/img/logo.png" alt="Blooket Logo">
+            </div>
+            <div class="volumeSlider">
+                <label for="volume">Volume:</label>
+                <input type="range" id="volume" min="0" max="1" step="0.01" value="0.5">
+            </div>
+            <div class="lang-menu">
+                <div class="selected-lang">
+                    <span id="current-lang-display">English</span>
+                </div>
+                <ul>
+                    <li><a href="#" class="English">English</a></li>
+                    <li><a href="#" class="Spanish">Spanish</a></li>
+                    <li><a href="#" class="German">German</a></li>
+                    <li><a href="#" class="French">French</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto p-4">
+
+        <div id="host-join-screen" class="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
+            <h2 class="text-2xl font-bold mb-6">Choose Your Role</h2>
+            <button id="host-game-btn-initial" class="btn btn-blue w-full mb-4 py-3">Host Game</button>
+            <button id="show-join-game-btn" class="btn btn-green w-full py-3">Join Game</button>
+            <p class="mt-4 text-sm text-gray-600">
+                Host to create a new game and get a PIN, or Join an existing game with a PIN.
+            </p>
+        </div>
+
+        <div id="login-screen" class="bg-white p-8 rounded-lg shadow-md w-full max-w-md hidden">
+            <h1 id="greetings" class="text-3xl font-bold mb-4"></h1>
+            <p id="description" class="text-gray-600 mb-6"></p>
+            <input id="username-input" class="input-field" type="text" placeholder="Username">
+            <input id="pin-input" class="input-field" type="text" placeholder="Game PIN">
+            <button id="start-game-btn" class="btn btn-purple w-full py-3 mt-4">Start Game</button>
+            <p id="error-message" class="text-red-500 mt-4 hidden"></p>
+            <button id="back-to-host-join" class="btn btn-gray w-full py-2 mt-2">Back</button>
+        </div>
+
+        <div id="host-screen" class="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center hidden">
+            <h2 class="text-2xl font-bold mb-4">Host Game</h2>
+            <p class="text-lg mb-4">Share this PIN with your friends:</p>
+            <div id="pin-display" class="text-5xl font-extrabold text-blue-600 mb-6 py-4 px-6 bg-blue-50 rounded-lg inline-block select-all"></div>
+            <p class="text-sm text-gray-600 mb-4">Waiting for players to join...</p>
+            <button id="start-hosted-game-btn" class="btn btn-purple w-full py-3 mt-4">Start Hosted Game</button>
+            <button id="back-to-host-join-from-host" class="btn btn-gray w-full py-2 mt-2">Back</button>
+        </div>
+
+        <div id="leaderboard-section" class="bg-white p-6 rounded-lg shadow-md w-full max-w-xs ml-8 hidden md:block">
+            <h3 class="text-xl font-bold mb-4 text-center">Leaderboard</h3>
+            <div id="leaderboard-list" class="space-y-2">
+                <p class="text-gray-500 text-center">Loading leaderboard...</p>
+            </div>
+        </div>
+
+        <div id="game-screen" class="bg-white p-8 rounded-lg shadow-md w-full max-w-lg hidden">
+            <div class="flex justify-between items-center mb-6">
+                <p class="text-lg font-semibold">Gold: <span id="gold-display" class="text-yellow-600">0.00</span></p>
+                <p class="text-lg font-semibold">Time Left: <span id="timer-display" class="text-blue-600">05:00</span></p>
+            </div>
+
+            <div id="quiz-section">
+                <h2 id="question-text" class="text-xl font-bold mb-6"></h2>
+                <div id="answer-choices" class="grid grid-cols-1 gap-4">
+                    </div>
+            </div>
+
+            <div id="bonus-section" class="hidden">
+                <h2 class="text-xl font-bold mb-6 text-center">Choose Your Bonus!</h2>
+                <div id="bonus-choices" class="grid grid-cols-1 gap-4">
+                    </div>
+            </div>
+        </div>
+
+        <div id="game-over-screen" class="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center hidden">
+            <h2 class="text-3xl font-bold mb-4 text-red-600">Game Over!</h2>
+            <p class="text-xl mb-4">Your Final Gold: <span id="final-gold-display" class="text-yellow-600 font-bold">0.00</span></p>
+            <button id="play-again-btn" class="btn btn-blue w-full py-3 mt-4">Play Again</button>
+        </div>
+
+    </main>
+
+    <div id="message-box" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm text-center">
+            <p id="message-text" class="text-lg mb-4"></p>
+            <button id="message-ok-btn" class="btn btn-purple py-2 px-6">OK</button>
+        </div>
+    </div>
+
+    <audio id="music" src="your-background-music.mp3" loop muted></audio> <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Your web app's Firebase configuration
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
         const firebaseConfig = {
             apiKey: "AIzaSyC9XoNDsTaqHcCn3gv9rU9fHQbOeH-10U0",
             authDomain: "multilingual-bloocket-3000.firebaseapp.com",
@@ -17,28 +121,41 @@
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
-        // const analytics = getAnalytics(app); // We don't use analytics in the game logic, so commenting out for simplicity
-        const db = getFirestore(app); // Initialize Firestore
-        const auth = getAuth(app); // Initialize Authentication
+        const db = getFirestore(app);
+        const auth = getAuth(app);
 
-        let userId = null; // To store the authenticated user ID
-        let generatedPin = ''; // The PIN generated for the current game session
-        let gold = 0; // Player's current gold
-        let timeLeft = 300; // 5 minutes in seconds
-        let timerInterval; // To store the timer interval ID
-        let gameRunning = false; // Flag to indicate if the game is active
-        let currentQuestionIndex = 0; // Track current question
-        let username = ''; // Store the username
+        let userId = null;
+        let generatedPin = '';
+        let gold = 0;
+        let timeLeft = 300;
+        let timerInterval;
+        let gameRunning = false;
+        let currentQuestionIndex = 0;
+        let username = '';
+        let isHost = false; // New flag to distinguish host from joiner
+        let gamePinRef = null; // Firestore document reference for the game PIN
 
         // --- UI Element References ---
+        const hostJoinScreen = document.getElementById('host-join-screen');
+        const hostGameBtnInitial = document.getElementById('host-game-btn-initial');
+        const showJoinGameBtn = document.getElementById('show-join-game-btn');
+        const hostScreen = document.getElementById('host-screen');
+        const startHostedGameBtn = document.getElementById('start-hosted-game-btn');
+        const backToHostJoinFromHostBtn = document.getElementById('back-to-host-join-from-host');
+
         const loginScreen = document.getElementById('login-screen');
-        const gameScreen = document.getElementById('game-screen');
-        const gameOverScreen = document.getElementById('game-over-screen');
         const usernameInput = document.getElementById('username-input');
         const pinInput = document.getElementById('pin-input');
         const pinDisplay = document.getElementById('pin-display');
         const startGameBtn = document.getElementById('start-game-btn');
         const errorMessage = document.getElementById('error-message');
+        const backToHostJoinBtn = document.getElementById('back-to-host-join');
+
+        const leaderboardSection = document.getElementById('leaderboard-section'); // New
+        const leaderboardList = document.getElementById('leaderboard-list'); // Existing
+
+        const gameScreen = document.getElementById('game-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
         const timerDisplay = document.getElementById('timer-display');
         const goldDisplay = document.getElementById('gold-display');
         const questionText = document.getElementById('question-text');
@@ -46,7 +163,6 @@
         const bonusSection = document.getElementById('bonus-section');
         const bonusChoicesDiv = document.getElementById('bonus-choices');
         const finalGoldDisplay = document.getElementById('final-gold-display');
-        const leaderboardList = document.getElementById('leaderboard-list');
         const playAgainBtn = document.getElementById('play-again-btn');
         const messageBox = document.getElementById('message-box');
         const messageText = document.getElementById('message-text');
@@ -57,6 +173,7 @@
         const greetingsElement = document.getElementById('greetings');
         const descriptionElement = document.getElementById('description');
         const langLinks = document.querySelectorAll('.lang-menu ul li a');
+        const currentLangDisplay = document.getElementById('current-lang-display'); // New
 
         // --- Game Data Classes (Converted from Java) ---
         class ChoiceEffect {
@@ -81,11 +198,9 @@
             applyEffect(currentGold) {
                 if (this.type === 'PERCENTAGE_MULTIPLIER') {
                     let newGold = currentGold * this.value;
-                    // Ensure gold doesn't go below zero if it's a negative multiplier
                     return newGold < 0 ? 0 : newGold;
                 } else {
                     let newGold = currentGold + this.value;
-                    // Ensure gold doesn't go below zero for flat amount deductions
                     return newGold < 0 ? 0 : newGold;
                 }
             }
@@ -94,7 +209,6 @@
         class Question {
             constructor(questionText, answerChoices, correctAnswer) {
                 this.questionText = questionText;
-                // Create a copy and shuffle choices immediately upon creation
                 this.answerChoices = [...answerChoices];
                 this.correctAnswer = correctAnswer;
                 this.shuffleChoices();
@@ -112,7 +226,7 @@
             }
 
             getAnswerChoices() {
-                return [...this.answerChoices]; // Return a copy to prevent external modification
+                return [...this.answerChoices];
             }
 
             getCorrectAnswer() {
@@ -130,26 +244,147 @@
 
         const LanguageData = {
             English: {
+                name: "English",
                 greeting: "Welcome to the Better Version of Blooket!!!",
                 description: "Answer questions to earn gold, then pick a bonus!",
+                host_game: "Host Game",
+                join_game: "Join Game",
+                choose_role: "Choose Your Role",
+                share_pin: "Share this PIN with your friends:",
+                waiting_players: "Waiting for players to join...",
+                start_hosted: "Start Hosted Game",
+                back: "Back",
+                username_placeholder: "Username",
+                pin_placeholder: "Game PIN",
+                start_game: "Start Game",
+                incorrect_pin: "Incorrect PIN. Please try again.",
+                no_username: "Please enter a username.",
+                correct: "Correct!",
+                earned_gold: "You earned 100 Gold!",
+                incorrect: "Incorrect.",
+                lost_gold: "You lost 50 Gold!",
+                correct_answer_was: "The correct answer was:",
+                choose_bonus: "Choose Your Bonus!",
+                gold_changed: "Your gold changed from",
+                to: "to",
+                game_over: "Game Over!",
+                your_final_gold: "Your Final Gold:",
+                play_again: "Play Again",
+                loading_leaderboard: "Loading leaderboard...",
+                no_scores: "No scores yet. Be the first!",
+                error_leaderboard: "Error loading leaderboard.",
+                authentication_failed: "Authentication failed. Please check your console for details.",
+                submit_failed: "Failed to submit score. Please check your internet connection and Firebase setup.",
+                ok: "OK"
             },
             Spanish: {
+                name: "Español",
                 greeting: "¡¡¡Bienvenido a la mejor versión de Blooket!!!",
-                description: "Responde preguntas para ganar oro y ¡luego elige un bono!",
+                description: "¡Responde preguntas para ganar oro y luego elige un bono!",
+                host_game: "Organizar Juego",
+                join_game: "Unirse al Juego",
+                choose_role: "Elige tu Rol",
+                share_pin: "Comparte este PIN con tus amigos:",
+                waiting_players: "Esperando a que los jugadores se unan...",
+                start_hosted: "Iniciar Juego Organizado",
+                back: "Atrás",
+                username_placeholder: "Nombre de usuario",
+                pin_placeholder: "PIN del Juego",
+                start_game: "Iniciar Juego",
+                incorrect_pin: "PIN incorrecto. Por favor, inténtalo de nuevo.",
+                no_username: "Por favor, introduce un nombre de usuario.",
+                correct: "¡Correcto!",
+                earned_gold: "¡Ganaste 100 de oro!",
+                incorrect: "Incorrecto.",
+                lost_gold: "¡Perdiste 50 de oro!",
+                correct_answer_was: "La respuesta correcta era:",
+                choose_bonus: "¡Elige tu Bono!",
+                gold_changed: "Tu oro cambió de",
+                to: "a",
+                game_over: "¡Juego Terminado!",
+                your_final_gold: "Tu Oro Final:",
+                play_again: "Jugar de Nuevo",
+                loading_leaderboard: "Cargando clasificación...",
+                no_scores: "Aún no hay puntuaciones. ¡Sé el primero!",
+                error_leaderboard: "Error al cargar la clasificación.",
+                authentication_failed: "Autenticación fallida. Por favor, revisa tu consola para más detalles.",
+                submit_failed: "No se pudo enviar la puntuación. Por favor, verifica tu conexión a internet y configuración de Firebase.",
+                ok: "OK"
             },
             German: {
+                name: "Deutsch",
                 greeting: "Willkommen zur besseren Version von Blooket!!!",
                 description: "Beantworten Sie Fragen, um Gold zu verdienen, und wählen Sie dann einen Bonus aus!",
+                host_game: "Spiel hosten",
+                join_game: "Spiel beitreten",
+                choose_role: "Wähle deine Rolle",
+                share_pin: "Teile diesen PIN mit deinen Freunden:",
+                waiting_players: "Warte auf Spieler...",
+                start_hosted: "Gehostetes Spiel starten",
+                back: "Zurück",
+                username_placeholder: "Benutzername",
+                pin_placeholder: "Spiel-PIN",
+                start_game: "Spiel starten",
+                incorrect_pin: "Falscher PIN. Bitte versuche es erneut.",
+                no_username: "Bitte geben Sie einen Benutzernamen ein.",
+                correct: "Richtig!",
+                earned_gold: "Du hast 100 Gold verdient!",
+                incorrect: "Falsch.",
+                lost_gold: "Du hast 50 Gold verloren!",
+                correct_answer_was: "Die richtige Antwort war:",
+                choose_bonus: "Wähle deinen Bonus!",
+                gold_changed: "Dein Gold änderte sich von",
+                to: "zu",
+                game_over: "Spiel vorbei!",
+                your_final_gold: "Dein Endgold:",
+                play_again: "Nochmal spielen",
+                loading_leaderboard: "Bestenliste wird geladen...",
+                no_scores: "Noch keine Punktzahlen. Sei der Erste!",
+                error_leaderboard: "Fehler beim Laden der Bestenliste.",
+                authentication_failed: "Authentifizierung fehlgeschlagen. Überprüfen Sie bitte Ihre Konsole auf Details.",
+                submit_failed: "Fehler beim Einreichen der Punktzahl. Bitte überprüfen Sie Ihre Internetverbindung und Firebase-Einrichtung.",
+                ok: "OK"
             },
             French: {
+                name: "Français",
                 greeting: "Bienvenue dans la meilleure version de Blooket !!!",
                 description: "Répondez aux questions pour gagner de l'or, puis choisissez un bonus !",
-            },
+                host_game: "Héberger une partie",
+                join_game: "Rejoindre une partie",
+                choose_role: "Choisissez votre rôle",
+                share_pin: "Partagez ce code PIN avec vos amis :",
+                waiting_players: "En attente de joueurs...",
+                start_hosted: "Démarrer la partie hébergée",
+                back: "Retour",
+                username_placeholder: "Nom d'utilisateur",
+                pin_placeholder: "Code PIN du jeu",
+                start_game: "Démarrer la partie",
+                incorrect_pin: "Code PIN incorrect. Veuillez réessayer.",
+                no_username: "Veuillez entrer un nom d'utilisateur.",
+                correct: "Correct !",
+                earned_gold: "Vous avez gagné 100 Or !",
+                incorrect: "Incorrect.",
+                lost_gold: "Vous avez perdu 50 Or !",
+                correct_answer_was: "La bonne réponse était :",
+                choose_bonus: "Choisissez votre bonus !",
+                gold_changed: "Votre or est passé de",
+                to: "à",
+                game_over: "Partie terminée !",
+                your_final_gold: "Votre Or Final :",
+                play_again: "Rejouer",
+                loading_leaderboard: "Chargement du classement...",
+                no_scores: "Pas encore de scores. Soyez le premier !",
+                error_leaderboard: "Erreur lors du chargement du classement.",
+                authentication_failed: "Échec de l'authentification. Veuillez vérifier votre console pour plus de détails.",
+                submit_failed: "Échec de l'envoi du score. Veuillez vérifier votre connexion Internet et la configuration de Firebase.",
+                ok: "OK"
+            }
         };
+
+        let currentLanguage = 'English'; // Default language
 
         // --- Initialization ---
         function initializeGameData() {
-            // Quiz Questions (from script.js and Java reference)
             questionBank = [
                 new Question("What is the capital of France?", ["Paris", "Berlin", "Madrid", "Rome"], "Paris"),
                 new Question("Which planet is known as the 'Red Planet'?", ["Mars", "Earth", "Jupiter", "Venus"], "Mars"),
@@ -163,13 +398,12 @@
                 new Question("Which gas do plants absorb from the atmosphere?", ["Oxygen", "Carbon Dioxide", "Nitrogen", "Hydrogen"], "Carbon Dioxide")
             ];
 
-            // Bonus Choice Effects (from MainBlooketConsleQuiz.java and ChoiceEffects.java concepts)
             allChoiceEffects = [
-                new ChoiceEffect("+200% Gold", 'PERCENTAGE_MULTIPLIER', 3.0), // 100% current + 200% bonus = 300% total
-                new ChoiceEffect("+300% Gold", 'PERCENTAGE_MULTIPLIER', 4.0), // 100% current + 300% bonus = 400% total
-                new ChoiceEffect("-99% Gold", 'PERCENTAGE_MULTIPLIER', 0.01), // Retain 1%
-                new ChoiceEffect("-20% Gold", 'PERCENTAGE_MULTIPLIER', 0.8), // Retain 80%
-                new ChoiceEffect("-50% Gold", 'PERCENTAGE_MULTIPLIER', 0.5), // Retain 50%
+                new ChoiceEffect("+200% Gold", 'PERCENTAGE_MULTIPLIER', 3.0),
+                new ChoiceEffect("+300% Gold", 'PERCENTAGE_MULTIPLIER', 4.0),
+                new ChoiceEffect("-99% Gold", 'PERCENTAGE_MULTIPLIER', 0.01),
+                new ChoiceEffect("-20% Gold", 'PERCENTAGE_MULTIPLIER', 0.8),
+                new ChoiceEffect("-50% Gold", 'PERCENTAGE_MULTIPLIER', 0.5),
                 new ChoiceEffect("+250 Gold", 'FLAT_AMOUNT', 250.0),
                 new ChoiceEffect("+10 Gold", 'FLAT_AMOUNT', 10.0),
                 new ChoiceEffect("+500 Gold", 'FLAT_AMOUNT', 500.0),
@@ -185,39 +419,81 @@
                 const userCredential = await signInAnonymously(auth);
                 userId = userCredential.user.uid;
                 console.log("Authenticated as:", userId);
-                listenForLeaderboardUpdates(); // Start listening after authentication
+                listenForLeaderboardUpdates();
             } catch (error) {
                 console.error("Authentication error:", error);
-                showMessage("Authentication failed. Please check your console for details.");
+                showMessage(LanguageData[currentLanguage].authentication_failed);
             }
         }
 
-        // --- PIN Generation and Validation ---
-        function generatePin() {
-            generatedPin = Math.floor(1000 + Math.random() * 9000).toString(); // 4-digit PIN
-            pinDisplay.textContent = `Game PIN: ${generatedPin}`;
+        // --- PIN Generation and Validation (Host/Join) ---
+        async function generatePin() {
+            let pin = '';
+            let isUnique = false;
+            while (!isUnique) {
+                pin = Math.floor(1000 + Math.random() * 9000).toString(); // 4-digit PIN
+                const docRef = doc(db, "gamePins", pin);
+                const docSnap = await getDoc(docRef);
+                if (!docSnap.exists()) {
+                    isUnique = true;
+                }
+            }
+            generatedPin = pin;
+            pinDisplay.textContent = generatedPin;
+            gamePinRef = doc(db, "gamePins", generatedPin);
+            await setDoc(gamePinRef, {
+                hostId: userId,
+                status: "waiting", // waiting, active, finished
+                players: [],
+                createdAt: serverTimestamp(),
+                currentQuestionIndex: 0,
+                hostGold: 0 // Initialize host's gold, others will have their own local gold
+            });
+            console.log("Game PIN generated and created in Firestore:", generatedPin);
         }
 
-        // --- Game Flow Functions ---
-        function startGame() {
+        async function joinGame() {
             username = usernameInput.value.trim();
             const enteredPin = pinInput.value.trim();
 
             if (!username) {
-                errorMessage.textContent = "Please enter a username.";
+                errorMessage.textContent = LanguageData[currentLanguage].no_username;
                 errorMessage.classList.remove('hidden');
                 return;
             }
-            if (enteredPin !== generatedPin) {
-                errorMessage.textContent = "Incorrect PIN. Please try again.";
+            if (!enteredPin) {
+                errorMessage.textContent = LanguageData[currentLanguage].incorrect_pin; // Re-use for empty
                 errorMessage.classList.remove('hidden');
                 return;
             }
+
+            gamePinRef = doc(db, "gamePins", enteredPin);
+            const docSnap = await getDoc(gamePinRef);
+
+            if (!docSnap.exists()) {
+                errorMessage.textContent = LanguageData[currentLanguage].incorrect_pin;
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            const gameData = docSnap.data();
+            if (gameData.status !== "waiting") {
+                errorMessage.textContent = "This game has already started or is finished.";
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            // Add player to the game's player list in Firestore
+            await setDoc(gamePinRef, {
+                players: [...gameData.players, { id: userId, username: username, gold: 0 }],
+                // You might also want to set status to 'active' if the host starts
+            }, { merge: true });
 
             errorMessage.classList.add('hidden');
             loginScreen.classList.add('hidden');
             gameScreen.classList.remove('hidden');
             gameOverScreen.classList.add('hidden');
+            leaderboardSection.classList.add('hidden'); // Hide leaderboard when game starts
 
             gold = 0;
             timeLeft = 300; // Reset timer to 5 minutes
@@ -225,19 +501,71 @@
             gameRunning = true;
             updateGoldDisplay();
             updateTimerDisplay();
+            // In a multiplayer game, questions would be controlled by the host or a shared state
+            // For now, still shuffle locally for joined players.
             shuffleQuestionBank();
             displayQuestion();
             startTimer();
+
+            // Listen for game state changes from the host
+            onSnapshot(gamePinRef, (doc) => {
+                const data = doc.data();
+                if (data && data.status === "active" && !isHost) {
+                    // Host has started the game, ensure we're on the game screen
+                    if (gameScreen.classList.contains('hidden')) {
+                         loginScreen.classList.add('hidden');
+                         hostScreen.classList.add('hidden');
+                         hostJoinScreen.classList.add('hidden');
+                         gameScreen.classList.remove('hidden');
+                         leaderboardSection.classList.add('hidden');
+                         // Optionally re-sync game state from host if needed
+                    }
+                }
+                // Handle new questions, bonus choices based on host actions
+                if (data && data.currentQuestionIndex !== undefined && data.currentQuestionIndex !== currentQuestionIndex) {
+                    currentQuestionIndex = data.currentQuestionIndex;
+                    displayQuestion();
+                }
+                // Potentially sync gold or other states if the game is truly centralized
+            });
+        }
+
+
+        // --- Game Flow Functions ---
+        function startGameAsHost() {
+            // This is for the host to officially start the game after generating PIN
+            hostScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            leaderboardSection.classList.add('hidden'); // Hide leaderboard when game starts
+
+            gold = 0;
+            timeLeft = 300;
+            currentQuestionIndex = 0;
+            gameRunning = true;
+            updateGoldDisplay();
+            updateTimerDisplay();
+            shuffleQuestionBank();
+            displayQuestion();
+            startTimer();
+
+            // Update game status in Firestore
+            if (gamePinRef) {
+                setDoc(gamePinRef, { status: "active", hostGold: gold, currentQuestionIndex: currentQuestionIndex }, { merge: true });
+            }
         }
 
         function resetGame() {
             gameOverScreen.classList.add('hidden');
-            loginScreen.classList.remove('hidden');
+            hostJoinScreen.classList.remove('hidden'); // Go back to host/join screen
             usernameInput.value = '';
             pinInput.value = '';
-            generatePin(); // Generate a new PIN for the new game
-            leaderboardList.innerHTML = '<p class="text-gray-500">Loading leaderboard...</p>'; // Clear leaderboard and show loading
-            stopTimer(); // Ensure timer is stopped if resetGame is called after game over
+            generatedPin = ''; // Clear generated PIN
+            pinDisplay.textContent = ''; // Clear PIN display
+            leaderboardList.innerHTML = '<p class="text-gray-500 text-center">Loading leaderboard...</p>';
+            stopTimer();
+            leaderboardSection.classList.remove('hidden'); // Show leaderboard again
+            isHost = false; // Reset host status
+            gamePinRef = null; // Clear game PIN reference
         }
 
         function endGame() {
@@ -246,7 +574,12 @@
             gameScreen.classList.add('hidden');
             gameOverScreen.classList.remove('hidden');
             finalGoldDisplay.textContent = gold.toFixed(2);
-            submitScore(username, gold); // Submit score to Firebase
+            submitScore(username, gold);
+
+            // Update game status in Firestore if host
+            if (isHost && gamePinRef) {
+                setDoc(gamePinRef, { status: "finished", hostFinalGold: gold }, { merge: true });
+            }
         }
 
         // --- Quiz Functions ---
@@ -261,14 +594,12 @@
             if (currentQuestionIndex < questionBank.length) {
                 const question = questionBank[currentQuestionIndex];
                 questionText.textContent = question.getQuestionText();
-                answerChoicesDiv.innerHTML = ''; // Clear previous choices
+                answerChoicesDiv.innerHTML = '';
 
                 question.getAnswerChoices().forEach((choice, index) => {
                     const button = document.createElement('button');
                     button.textContent = choice;
-                    button.classList.add('question-choices');
-                    button.classList.add('btn'); // Apply general button styling
-                    button.classList.add(`choice-${index}`); // Add specific class for color
+                    button.classList.add('question-choices', 'btn', `choice-${index}`);
                     button.addEventListener('click', () => handleAnswer(choice, question.getCorrectAnswer(), button));
                     answerChoicesDiv.appendChild(button);
                 });
@@ -276,13 +607,11 @@
                 quizSection.classList.remove('hidden');
                 bonusSection.classList.add('hidden');
             } else {
-                // All questions answered, end the game
                 endGame();
             }
         }
 
         function handleAnswer(selectedChoice, correctAnswer, clickedButton) {
-            // Disable all answer buttons after one is clicked
             Array.from(answerChoicesDiv.children).forEach(button => button.disabled = true);
 
             const isCorrect = (selectedChoice.trim().toLowerCase() === correctAnswer.trim().toLowerCase());
@@ -290,40 +619,42 @@
             if (isCorrect){
                 clickedButton.classList.add('correct');
                 gold += 100.0;
-                showMessage("Correct! You earned 100 Gold!", () => {
+                showMessage(`${LanguageData[currentLanguage].correct} ${LanguageData[currentLanguage].earned_gold}`, () => {
                     displayBonusChoices();
                 });
             } else {
                 clickedButton.classList.add('incorrect');
-                // Highlight the correct answer
                 Array.from(answerChoicesDiv.children).forEach(button => {
                     if (button.textContent.trim().toLowerCase() === correctAnswer.trim().toLowerCase()) {
                         button.classList.add('correct');
                     }
                 });
                 gold -= 50.0;
-                if (gold < 0) gold = 0; // Gold cannot go below zero
-                showMessage(`Incorrect. The correct answer was: ${correctAnswer}. You lost 50 Gold.`, () => {
+                if (gold < 0) gold = 0;
+                showMessage(`${LanguageData[currentLanguage].incorrect} ${LanguageData[currentLanguage].correct_answer_was} ${correctAnswer}. ${LanguageData[currentLanguage].lost_gold}`, () => {
                     displayBonusChoices();
                 });
             }
             updateGoldDisplay();
+
+            // If host, update shared gold state
+            if (isHost && gamePinRef) {
+                 setDoc(gamePinRef, { hostGold: gold }, { merge: true });
+            }
         }
 
         function displayBonusChoices() {
             quizSection.classList.add('hidden');
             bonusSection.classList.remove('hidden');
-            bonusChoicesDiv.innerHTML = ''; // Clear previous choices
+            bonusChoicesDiv.innerHTML = '';
 
-            // Select 3 random unique bonus options
             const shuffledEffects = [...allChoiceEffects].sort(() => 0.5 - Math.random());
             const selectedBonusOptions = shuffledEffects.slice(0, 3);
 
             selectedBonusOptions.forEach(effect => {
                 const button = document.createElement('button');
                 button.textContent = effect.getDescription();
-                button.classList.add('bonus-choice-btn');
-                button.classList.add('btn'); // Apply general button styling
+                button.classList.add('bonus-choice-btn', 'btn');
                 button.addEventListener('click', () => handleBonusChoice(effect));
                 bonusChoicesDiv.appendChild(button);
             });
@@ -334,15 +665,19 @@
             gold = chosenEffect.applyEffect(gold);
             updateGoldDisplay();
 
-            showMessage(`You chose: ${chosenEffect.getDescription()}! Your gold changed from ${oldGold.toFixed(2)} to ${gold.toFixed(2)}.`, () => {
+            showMessage(`${LanguageData[currentLanguage].gold_changed} ${oldGold.toFixed(2)} ${LanguageData[currentLanguage].to} ${gold.toFixed(2)}.`, () => {
                 currentQuestionIndex++;
-                displayQuestion(); // Move to the next question
+                // If host, update shared question index
+                if (isHost && gamePinRef) {
+                    setDoc(gamePinRef, { currentQuestionIndex: currentQuestionIndex }, { merge: true });
+                }
+                displayQuestion();
             });
         }
 
         // --- Timer Functions ---
         function startTimer() {
-            clearInterval(timerInterval); // Clear any existing timer
+            clearInterval(timerInterval);
             timerInterval = setInterval(() => {
                 timeLeft--;
                 updateTimerDisplay();
@@ -377,16 +712,16 @@
                 console.log("Score submitted successfully!");
             } catch (e) {
                 console.error("Error adding document: ", e);
-                showMessage("Failed to submit score. Please check your internet connection and Firebase setup.");
+                showMessage(LanguageData[currentLanguage].submit_failed);
             }
         }
 
         function listenForLeaderboardUpdates() {
             const q = query(collection(db, "leaderboard"), orderBy("score", "desc"), limit(5));
             onSnapshot(q, (snapshot) => {
-                leaderboardList.innerHTML = ''; // Clear current leaderboard
+                leaderboardList.innerHTML = '';
                 if (snapshot.empty) {
-                    leaderboardList.innerHTML = '<p class="text-gray-500">No scores yet. Be the first!</p>';
+                    leaderboardList.innerHTML = `<p class="text-gray-500 text-center">${LanguageData[currentLanguage].no_scores}</p>`;
                     return;
                 }
                 snapshot.forEach((doc) => {
@@ -401,13 +736,14 @@
                 });
             }, (error) => {
                 console.error("Error listening to leaderboard updates:", error);
-                leaderboardList.innerHTML = '<p class="text-red-500">Error loading leaderboard.</p>';
+                leaderboardList.innerHTML = `<p class="text-red-500 text-center">${LanguageData[currentLanguage].error_leaderboard}</p>`;
             });
         }
 
-        // --- Custom Message Box (Replaces alert()) ---
+        // --- Custom Message Box ---
         function showMessage(text, callback) {
             messageText.textContent = text;
+            messageOkBtn.textContent = LanguageData[currentLanguage].ok;
             messageBox.classList.remove('hidden');
             messageOkBtn.onclick = () => {
                 messageBox.classList.add('hidden');
@@ -419,10 +755,28 @@
 
         // --- Language Switching ---
         function changeLanguage(languageCode) {
+            currentLanguage = languageCode;
             const data = LanguageData[languageCode];
             if (data) {
+                // Update text content of various elements
                 greetingsElement.textContent = data.greeting;
                 descriptionElement.textContent = data.description;
+                hostGameBtnInitial.textContent = data.host_game;
+                showJoinGameBtn.textContent = data.join_game;
+                document.querySelector('#host-join-screen h2').textContent = data.choose_role;
+                document.querySelector('#host-screen h2').textContent = data.host_game;
+                document.querySelector('#host-screen p').textContent = data.share_pin;
+                document.querySelector('#host-screen p:last-of-type').textContent = data.waiting_players;
+                startHostedGameBtn.textContent = data.start_hosted;
+                backToHostJoinFromHostBtn.textContent = data.back;
+                usernameInput.placeholder = data.username_placeholder;
+                pinInput.placeholder = data.pin_placeholder;
+                startGameBtn.textContent = data.start_game;
+                backToHostJoinBtn.textContent = data.back;
+                document.querySelector('#game-over-screen h2').textContent = data.game_over;
+                document.querySelector('#game-over-screen p').innerHTML = `${data.your_final_gold} <span id="final-gold-display" class="text-yellow-600 font-bold">${gold.toFixed(2)}</span>`;
+                playAgainBtn.textContent = data.play_again;
+                currentLangDisplay.textContent = data.name; // Update display in language menu
             }
         }
 
@@ -436,9 +790,8 @@
 
         // --- Music Control ---
         const music = document.getElementById('music');
-        const volumeSlider = document.querySelector('.volumeSlider');
+        const volumeSlider = document.getElementById('volume'); // Corrected ID
 
-        // Play music automatically and unmute on first user interaction with the body
         let hasInteracted = false;
         document.body.addEventListener('click', function() {
             if (!hasInteracted) {
@@ -446,7 +799,7 @@
                 music.play().catch(e => console.error("Error playing music:", e));
                 hasInteracted = true;
             }
-        }, { once: true }); // Ensure this runs only once
+        }, { once: true });
 
         volumeSlider.addEventListener('input', function() {
             music.volume = this.value;
@@ -454,15 +807,37 @@
 
 
         // --- Event Listeners ---
-        startGameBtn.addEventListener('click', startGame);
+        hostGameBtnInitial.addEventListener('click', async () => {
+            hostJoinScreen.classList.add('hidden');
+            hostScreen.classList.remove('hidden');
+            isHost = true;
+            await generatePin(); // Generate PIN for the host
+        });
+
+        showJoinGameBtn.addEventListener('click', () => {
+            hostJoinScreen.classList.add('hidden');
+            loginScreen.classList.remove('hidden');
+            isHost = false;
+        });
+
+        startHostedGameBtn.addEventListener('click', startGameAsHost); // New button for host to start
+
+        startGameBtn.addEventListener('click', joinGame); // Now handles joining logic
+
+        backToHostJoinBtn.addEventListener('click', resetGame); // Use resetGame to go back to initial screen
+        backToHostJoinFromHostBtn.addEventListener('click', resetGame); // Use resetGame to go back to initial screen
+
         playAgainBtn.addEventListener('click', resetGame);
 
         // Initialize on page load
         window.onload = async () => {
-            initializeGameData(); // Load quiz questions and effects
-            await authenticateUser(); // Authenticate first with Firebase
-            generatePin(); // Generate initial PIN
-            // Initial leaderboard load is handled by listenForLeaderboardUpdates() after auth
+            initializeGameData();
+            await authenticateUser();
             changeLanguage('English'); // Set initial language
+            // Initial view is host/join screen, leaderboard is visible
+            hostJoinScreen.classList.remove('hidden');
+            leaderboardSection.classList.remove('hidden');
         };
-    </script> 
+    </script>
+</body>
+</html>
