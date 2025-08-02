@@ -207,6 +207,7 @@ nav {
     display: none;
 }
 
+/* Search bar styles */
 .search {
     --padding: 14px;
 
@@ -216,7 +217,7 @@ nav {
     align-items: center;
     padding: var(--padding);
     border-radius: 28px;
-    background-color: #f6f6f6;
+    background-color: #e8e8e8;
     transition: box-shadow 0.25s;
 
 }
@@ -243,6 +244,7 @@ nav {
 .search-icon {
     color: rgba(0, 0, 0, 0.5);
     
+}
 }
 
 
