@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Blooket</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F4E3; /* A soft, complementary cream color */
+        }
+        .question-button {
+            transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+        }
+        .question-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .question-button.correct {
+            background-color: #10B981 !important; /* Green-500 */
+        }
+        .question-button.incorrect {
+            background-color: #EF4444 !important; /* Red-500 */
+        }
+        .bonus-choice-btn {
+            transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+        }
+        .bonus-choice-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <header class="bg-[#A4C2C4] h-20 w-full flex items-center justify-between p-4 shadow-lg">
+        <div class="flex items-center space-x-4">
+            <div class="logo">
+                <img src="https://cdn.worldvectorlogo.com/logos/st-1.svg" alt="ST Logo" class="h-12">
+            </div>
+            <div class="volumeSlider flex items-center space-x-2">
+                <label for="volume" class="text-gray-700">Volume:</label>
+                <input type="range" id="volume" min="0" max="1" step="0.01" value="0.5">
+            </div>
+        </div>
+        <div class="lang-menu relative">
+            <div id="selected-lang-dropdown" class="selected-lang bg-white text-gray-800 py-2 px-4 rounded-lg shadow-sm cursor-pointer flex items-center space-x-2 hover:bg-gray-200">
+                <span id="current-lang-display">English</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <ul id="lang-options" class="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg hidden z-10">
+                <li><a href="#" class="block px-4 py-2 hover:bg-gray-100 rounded-t-lg" data-lang="en">English</a></li>
+                <li><a href="#" class="block px-4 py-2 hover:bg-gray-100" data-lang="es">Español</a></li>
+                <li><a href="#" class="block px-4 py-2 hover:bg-gray-100" data-lang="de">Deutsch</a></li>
+                <li><a href="#" class="block px-4 py-2 hover:bg-gray-100 rounded-b-lg" data-lang="fr">Français</a></li>
+            </ul>
+        </div>
+    </header>
+
+    <main class="container flex-grow flex p-4">
+        <!-- Left Sidebar for Game Stats -->
+        <aside id="game-stats-sidebar" class="w-1/4 bg-white p-6 rounded-lg shadow-md mr-8 hidden">
+            <h2 class="text-2xl font-bold mb-4 text-center">Game Stats</h2>
+            <div class="space-y-4">
+                <div class="bg-gray-100 p-4 rounded-lg text-center">
+                    <h3 class="text-lg font-semibold">Time Remaining</h3>
+                    <p id="timer-display" class="text-3xl font-mono mt-2">05:00</p>
+                </div>
+                <div class="bg-gray-100 p-4 rounded-lg text-center">
+                    <h3 class="text-lg font-semibold" data-i18n="currentGold">Current Gold</h3>
+                    <p id="current-gold-display-sidebar" class="text-3xl font-bold text-yellow-500 mt-2">$500.00</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Message Box for displaying status and errors -->
+        <div id="message-box" class="fixed top-4 left-1/2 -translate-x-1/2 p-4 rounded-lg shadow-lg text-white text-center z-50 hidden">
+            <span id="message-text"></span>
+        </div>
+
+        <div class="flex-grow flex items-center justify-center">
+            <!-- Game Card (Host, Join, or Solo) -->
+            <section id="host-join-card" class="bg-white p-8 rounded-lg shadow-md max-w-sm w-full text-center">
+                <h1 class="text-2xl font-bold mb-4" data-i18n="chooseRole">Choose Your Role</h1>
+                <div id="host-join-screen" class="space-y-4">
+                    <button id="host-game-btn-initial" class="bg-blue-500 text-white font-bold py-3 px-6 rounded-lg w-full hover:bg-blue-600 transition-colors" data-i18n="hostGameBtn">Host Game</button>
+                    <button id="show-join-game-btn" class="bg-green-500 text-white font-bold py-3 px-6 rounded-lg w-full hover:bg-green-600 transition-colors" data-i18n="joinGameBtn">Join Game</button>
+                    <button id="solo-play-btn" class="bg-purple-500 text-white font-bold py-3 px-6 rounded-lg w-full hover:bg-purple-600 transition-colors" data-i18n="soloPlayBtn">Solo Play</button>
+                    <p class="text-sm text-gray-500 mt-4" data-i18n="hostJoinTip">
+                        Host to create a new game and get a PIN, or Join an existing game with a PIN.
+                    </p>
+                </div>
+
+                <!-- Host Screen -->
+                <div id="host-screen" class="hidden space-y-4 text-center">
+                    <h2 class="text-xl font-bold" data-i18n="youAreHost">You are the Host</h2>
+                    <p data-i18n="sharePin">Share this PIN with your friends:</p>
+                    <div class="bg-gray-200 text-5xl font-mono py-3 px-6 rounded-lg tracking-widest" id="game-pin"></div>
+                    <div id="players-list-host" class="mt-4 p-3 bg-gray-100 rounded-lg shadow-inner">
+                        <h3 class="text-lg font-semibold mb-2" data-i18n="playersJoined">Players Joined:</h3>
+                        <ul id="host-players-list" class="list-disc list-inside text-left">
+                            <!-- Player names will be dynamically added here -->
+                        </ul>
+                    </div>
+                    <button id="start-hosted-game-btn" class="bg-green-500 text-white font-bold py-3 px-6 rounded-lg w-full hover:bg-green-600 transition-colors" data-i18n="startGameBtn">Start Game</button>
+                    <button id="back-to-host-join-from-host-btn" class="bg-gray-500 text-white font-bold py-3 px-6 rounded-lg w-full hover:bg-gray-600 transition-colors" data-i18n="backBtn">Back</button>
+                </div>
+
+                <!-- Login Screen (for joining) -->
+                <div id="login-screen" class="hidden space-y-4 text-center">
+                    <h2 class="text-2xl font-bold" data-i18n="joinGameTitle">Join Game</h2>
+                    <input type="text" id="username-input" placeholder="Enter your name" class="border-2 border-gray-300 p-3 rounded-lg w-full" data-i18n-placeholder="enterNamePlaceholder">
+                    <input type="text" id="pin-input" placeholder="Enter Game PIN" class="border-2 border-gray-300 p-3 rounded-lg w-full" data-i18n-placeholder="enterPinPlaceholder">
+                    <div class="flex justify-center space-x-4">
+                        <button id="start-game-btn" class="bg-green-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-600 transition-colors" data-i18n="joinBtn">Join</button>
+                        <button id="back-to-host-join-btn" class="bg-gray-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-gray-600 transition-colors" data-i18n="backBtn">Back</button>
+                    </div>
+                </div>
+            </section>
+        
+            <!-- Quiz Screen -->
+            <section id="quiz-screen" class="hidden text-center space-y-8 p-6 rounded-lg shadow-xl bg-white max-w-2xl mx-auto w-full">
+                <div class="bg-gray-100 p-6 rounded-lg shadow-inner">
+                    <h2 id="question-text" class="text-3xl font-bold mb-4 text-gray-800"></h2>
+                </div>
+                <div id="question-choices" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Choices will be dynamically added here -->
+                </div>
+            </section>
+
+            <!-- Bonus Choice Screen -->
+            <section id="bonus-choice-screen" class="hidden text-center space-y-6 p-6 rounded-lg shadow-xl bg-white max-w-xl mx-auto w-full">
+                <h2 class="text-3xl font-bold text-purple-600" data-i18n="chooseBonusTitle">Choose a Bonus!</h2>
+                <div id="bonus-choices" class="space-y-4">
+                    <!-- Bonus choices will be dynamically added here -->
+                </div>
+            </section>
+            
+            <!-- Game Over Screen -->
+            <section id="game-over-screen" class="hidden text-center space-y-6 p-6 rounded-lg shadow-xl bg-white max-w-md mx-auto w-full">
+                <h2 class="text-4xl font-bold text-red-600" data-i18n="gameOverTitle">Game Over!</h2>
+                <p id="final-score" class="text-2xl text-gray-700" data-i18n="finalScore">Your final gold: $0.00</p>
+                <button id="play-again-btn" class="bg-blue-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-600 transition-colors" data-i18n="playAgainBtn">Play Again</button>
+            </section>
+
+            <!-- Leaderboard Card (Hidden by default for solo mode) -->
+            <section id="leaderboard-section" class="bg-white p-8 rounded-lg shadow-md max-w-sm w-full hidden">
+                <h2 class="text-2xl font-bold mb-4 text-center" data-i18n="leaderboardTitle">Leaderboard</h2>
+                <div id="leaderboard-content" class="text-center">
+                    <p id="leaderboard-loading" class="text-gray-500" data-i18n="loadingLeaderboard">Loading leaderboard...</p>
+                    <ul id="leaderboard-list" class="space-y-2 text-left hidden">
+                        <!-- Leaderboard items will be dynamically added here -->
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </main>
+    
+    <!-- Updated Firebase SDKs to the modular version -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, collection, query, where, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+        apiKey: "AIzaSyC9XoNDsTaqHcCn3gv9rU9fHQbOeH-10U0",
+        authDomain: "multilingual-bloocket-3000.firebaseapp.com",
+        projectId: "multilingual-bloocket-3000",
+        storageBucket: "multilingual-bloocket-3000.firebasestorage.app",
+        messagingSenderId: "566691790847",
+        appId: "1:566691790847:web:c0345cb1a99467dd4631ca",
+        measurementId: "G-KNBY3BWK3X"
+        };
+    
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        // DOM Elements
+        const hostJoinCard = document.getElementById('host-join-card');
+        const hostJoinScreen = document.getElementById('host-join-screen');
+        const hostScreen = document.getElementById('host-screen');
+        const loginScreen = document.getElementById('login-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const bonusChoiceScreen = document.getElementById('bonus-choice-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const leaderboardSection = document.getElementById('leaderboard-section');
+        const gameStatsSidebar = document.getElementById('game-stats-sidebar');
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+
+        const hostGameBtnInitial = document.getElementById('host-game-btn-initial');
+        const showJoinGameBtn = document.getElementById('show-join-game-btn');
+        const soloPlayBtn = document.getElementById('solo-play-btn');
+        const startHostedGameBtn = document.getElementById('start-hosted-game-btn');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const backToHostJoinBtn = document.getElementById('back-to-host-join-btn');
+        const backToHostJoinFromHostBtn = document.getElementById('back-to-host-join-from-host-btn');
+        const playAgainBtn = document.getElementById('play-again-btn');
+
+        const gamePinDisplay = document.getElementById('game-pin');
+        const usernameInput = document.getElementById('username-input');
+        const pinInput = document.getElementById('pin-input');
+        const hostPlayersList = document.getElementById('host-players-list');
+        const leaderboardList = document.getElementById('leaderboard-list');
+        const leaderboardLoading = document.getElementById('leaderboard-loading');
+        const timerDisplay = document.getElementById('timer-display');
+        const currentGoldDisplaySidebar = document.getElementById('current-gold-display-sidebar');
+
+        const questionTextElement = document.getElementById('question-text');
+        const questionChoicesElement = document.getElementById('question-choices');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const bonusChoicesElement = document.getElementById('bonus-choices');
+
+        const volumeSlider = document.getElementById('volume');
+        const bgMusic = new Audio('Cash - Mark Karan, Scott Guberman, Angeline Saris, Jeremy Hoenig.mp3');
+        bgMusic.loop = true;
+
+        let musicStarted = false;
+        document.body.addEventListener('click', () => {
+            if (!musicStarted) {
+                bgMusic.play();
+                musicStarted = true;
+            }
+        });
+
+        // Language Elements
+        const currentLangDisplay = document.getElementById('current-lang-display');
+        const langOptionsList = document.getElementById('lang-options');
+        const selectedLangDropdown = document.getElementById('selected-lang-dropdown');
+        
+        // Game State Variables
+        let isHost = false;
+        let isSolo = false;
+        let gamePin = null;
+        let userId = null;
+        let username = null;
+        let gold = 500.0;
+        let questionBank = [];
+        let currentQuestionIndex = 0;
+        let allChoiceEffects = [];
+        let allQuestions = [];
+        let timerInterval;
+        let timeLeft = 300; // 5 minutes in seconds
+        
+        const langMap = {
+            'en': 'English',
+            'es': 'Español',
+            'de': 'Deutsch',
+            'fr': 'Français'
+        };
+
+        // Class to represent a single question (from Questions.java)
+        class Question {
+            constructor(questionText, answerChoices, correctAnswer) {
+                this.questionText = questionText;
+                this.answerChoices = [...answerChoices];
+                this.correctAnswer = correctAnswer;
+                this.answerChoices.sort(() => Math.random() - 0.5); // Shuffle choices
+            }
+
+            isCorrect(selectedAnswer) {
+                return this.correctAnswer.trim().toLowerCase() === selectedAnswer.trim().toLowerCase();
+            }
+        }
+
+        // Class to represent a choice effect (from ChoiceEfects.java)
+        class ChoiceEffect {
+            constructor(description, type, value) {
+                this.description = description;
+                this.type = type;
+                this.value = value;
+            }
+
+            applyEffect(currentGold) {
+                if (this.type === 'PERCENTAGE_MULTIPLIER') {
+                    return currentGold * this.value;
+                } else {
+                    return currentGold + this.value;
+                }
+            }
+        }
+
+
+        // Utility functions
+        function showMessage(text, isError = false) {
+            messageText.textContent = text;
+            messageBox.className = `fixed top-4 left-1/2 -translate-x-1/2 p-4 rounded-lg shadow-lg text-white text-center z-50 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+            messageBox.classList.remove('hidden');
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 3000);
+        }
+        
+        async function generatePin() {
+            let pin = Math.floor(100000 + Math.random() * 900000);
+            gamePinDisplay.textContent = pin;
+            try {
+                await setDoc(doc(db, 'gamePins', String(pin)), {
+                    isHostOnline: true,
+                    players: [],
+                    isGameStarted: false
+                });
+                gamePin = pin;
+                const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+                showMessage(translations[currentLang].pinGenerated.replace('{{pin}}', pin));
+                return pin;
+            } catch (error) {
+                console.error("Error generating PIN: ", error);
+                const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+                showMessage(translations[currentLang].errorPin, true);
+                throw error;
+            }
+        }
+        
+        // Language and other initial setup (from your original files)
+        const translations = {
+            'en': {
+                'chooseRole': 'Choose Your Role',
+                'hostGameBtn': 'Host Game',
+                'joinGameBtn': 'Join Game',
+                'soloPlayBtn': 'Solo Play',
+                'hostJoinTip': 'Host to create a new game and get a PIN, or Join an existing game with a PIN.',
+                'youAreHost': 'You are the Host',
+                'sharePin': 'Share this PIN with your friends:',
+                'playersJoined': 'Players Joined:',
+                'startGameBtn': 'Start Game',
+                'backBtn': 'Back',
+                'joinGameTitle': 'Join Game',
+                'enterNamePlaceholder': 'Enter your name',
+                'enterPinPlaceholder': 'Enter Game PIN',
+                'joinBtn': 'Join',
+                'leaderboardTitle': 'Leaderboard',
+                'loadingLeaderboard': 'Loading leaderboard...',
+                'currentGold': 'Current Gold',
+                'chooseBonusTitle': 'Choose a Bonus!',
+                'gameOverTitle': 'Game Over!',
+                'finalScore': 'Your final gold: $',
+                'playAgainBtn': 'Play Again',
+                'invalidPin': 'Invalid PIN or host not online.',
+                'gameStarted': 'Game has already started.',
+                'enterNamePin': 'Please enter a name and PIN.',
+                'pinGenerated': 'Game PIN {{pin}} generated successfully!',
+                'errorPin': 'Error generating PIN.',
+                'errorJoin': 'Error joining game.',
+                'failedStart': 'Failed to start game.',
+                'correctAnswer': 'Correct! You earned gold.',
+                'incorrectAnswer': 'Incorrect. You lose 50 gold. The correct answer was: ', // Updated message
+                'timesUp': 'Time is up!'
+            },
+            'es': {
+                'chooseRole': 'Elige tu rol',
+                'hostGameBtn': 'Organizar juego',
+                'joinGameBtn': 'Unirse a juego',
+                'soloPlayBtn': 'Jugar en solitario',
+                'hostJoinTip': 'Organiza para crear un nuevo juego y obtener un PIN, o únete a un juego existente con un PIN.',
+                'youAreHost': 'Eres el anfitrión',
+                'sharePin': 'Comparte este PIN con tus amigos:',
+                'playersJoined': 'Jugadores unidos:',
+                'startGameBtn': 'Iniciar juego',
+                'backBtn': 'Atrás',
+                'joinGameTitle': 'Unirse a juego',
+                'enterNamePlaceholder': 'Introduce tu nombre',
+                'enterPinPlaceholder': 'Introduce el PIN del juego',
+                'joinBtn': 'Unirse',
+                'leaderboardTitle': 'Clasificación',
+                'loadingLeaderboard': 'Cargando clasificación...',
+                'currentGold': 'Oro actual',
+                'chooseBonusTitle': '¡Elige un bono!',
+                'gameOverTitle': '¡Fin del juego!',
+                'finalScore': 'Tu oro final: $',
+                'playAgainBtn': 'Jugar de nuevo',
+                'invalidPin': 'PIN inválido o el anfitrión no está en línea.',
+                'gameStarted': 'El juego ya ha comenzado.',
+                'enterNamePin': 'Por favor, introduce un nombre y un PIN.',
+                'pinGenerated': '¡PIN del juego {{pin}} generado con éxito!',
+                'errorPin': 'Error al generar el PIN.',
+                'errorJoin': 'Error al unirse al juego.',
+                'failedStart': 'Error al iniciar el juego.',
+                'correctAnswer': '¡Correcto! Ganaste oro.',
+                'incorrectAnswer': 'Incorrecto. Pierdes 50 de oro. La respuesta correcta fue: ', // Updated message
+                'timesUp': '¡Se acabó el tiempo!'
+            },
+            'de': {
+                'chooseRole': 'Wähle deine Rolle',
+                'hostGameBtn': 'Spiel hosten',
+                'joinGameBtn': 'Spiel beitreten',
+                'soloPlayBtn': 'Solo spielen',
+                'hostJoinTip': 'Hoste, um ein neues Spiel zu erstellen und einen PIN zu erhalten, oder trete einem bestehenden Spiel mit einem PIN bei.',
+                'youAreHost': 'Du bist der Host',
+                'sharePin': 'Teile diesen PIN mit deinen Freunden:',
+                'playersJoined': 'Spieler beigetreten:',
+                'startGameBtn': 'Spiel starten',
+                'backBtn': 'Zurück',
+                'joinGameTitle': 'Spiel beitreten',
+                'enterNamePlaceholder': 'Gib deinen Namen ein',
+                'enterPinPlaceholder': 'Gib den Spiel-PIN ein',
+                'joinBtn': 'Beitreten',
+                'leaderboardTitle': 'Bestenliste',
+                'loadingLeaderboard': 'Bestenliste wird geladen...',
+                'currentGold': 'Aktuelles Gold',
+                'chooseBonusTitle': 'Wähle einen Bonus!',
+                'gameOverTitle': 'Spiel vorbei!',
+                'finalScore': 'Dein endgültiges Gold: $',
+                'playAgainBtn': 'Nochmal spielen',
+                'invalidPin': 'Ungültiger PIN oder Host ist nicht online.',
+                'gameStarted': 'Das Spiel hat bereits begonnen.',
+                'enterNamePin': 'Bitte gib einen Namen und PIN ein.',
+                'pinGenerated': 'Spiel-PIN {{pin}} erfolgreich generiert!',
+                'errorPin': 'Fehler beim Generieren des PINs.',
+                'errorJoin': 'Fehler beim Beitreten des Spiels.',
+                'failedStart': 'Fehler beim Starten des Spiels.',
+                'correctAnswer': 'Richtig! Du hast Gold verdient.',
+                'incorrectAnswer': 'Falsch. Du verlierst 50 Gold. Die richtige Antwort war: ', // Updated message
+                'timesUp': 'Zeit ist um!'
+            },
+            'fr': {
+                'chooseRole': 'Choisis ton rôle',
+                'hostGameBtn': 'Héberger un jeu',
+                'joinGameBtn': 'Rejoindre un jeu',
+                'soloPlayBtn': 'Jouer en solo',
+                'hostJoinTip': 'Héberge pour créer une nouvelle partie et obtenir un PIN, ou rejoins une partie existante avec un PIN.',
+                'youAreHost': 'Tu es l\'hôte',
+                'sharePin': 'Partage ce PIN avec tes amis:',
+                'playersJoined': 'Joueurs rejoints:',
+                'startGameBtn': 'Démarrer le jeu',
+                'backBtn': 'Retour',
+                'joinGameTitle': 'Rejoindre un jeu',
+                'enterNamePlaceholder': 'Entrez votre nom',
+                'enterPinPlaceholder': 'Entrez le PIN du jeu',
+                'joinBtn': 'Rejoindre',
+                'leaderboardTitle': 'Classement',
+                'loadingLeaderboard': 'Chargement du classement...',
+                'currentGold': 'Or actuel',
+                'chooseBonusTitle': 'Choisis un bonus!',
+                'gameOverTitle': 'Partie terminée!',
+                'finalScore': 'Ton or final: $',
+                'playAgainBtn': 'Rejouer',
+                'invalidPin': 'PIN invalide ou l\'hôte n\'est pas en ligne.',
+                'gameStarted': 'La partie a déjà commencé.',
+                'enterNamePin': 'Veuillez entrer un nom et un PIN.',
+                'pinGenerated': 'PIN de jeu {{pin}} généré avec succès!',
+                'errorPin': 'Erreur lors de la génération du PIN.',
+                'errorJoin': 'Erreur lors de la jonction au jeu.',
+                'failedStart': 'Échec du démarrage du jeu.',
+                'correctAnswer': 'Correct ! Tu as gagné de l\'or.',
+                'incorrectAnswer': 'Incorrect. Tu perds 50 d\'or. La bonne réponse était: ', // Updated message
+                'timesUp': 'Le temps est écoulé !'
+            }
+        };
+
+        function changeLanguage(lang) {
+            currentLangDisplay.textContent = langMap[lang];
+            const elements = document.querySelectorAll('[data-i18n]');
+            elements.forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    element.textContent = translations[lang][key];
+                }
+            });
+            const placeholders = document.querySelectorAll('[data-i18n-placeholder]');
+            placeholders.forEach(element => {
+                const key = element.getAttribute('data-i18n-placeholder');
+                if (translations[lang] && translations[lang][key]) {
+                    element.placeholder = translations[lang][key];
+                }
+            });
+        }
+        
+        function updateLeaderboard() {
+            // ... (your leaderboard update logic)
+        }
+
+        function initializeGameData() {
+            // Set up all questions based on the Java code provided
+            allQuestions = [
+                new Question("What is the capital of France?", ["Paris", "London", "Berlin", "Madrid"], "Paris"),
+                new Question("What is 2 + 2?", ["3", "4", "5", "6"], "4"),
+                new Question("Which planet is known as the Red Planet?", ["Earth", "Mars", "Jupiter", "Venus"], "Mars"),
+                new Question("What is the largest ocean on Earth?", ["Atlantic Ocean", "Indian Ocean", "Arctic Ocean", "Pacific Ocean"], "Pacific Ocean"),
+                new Question("Who wrote 'Romeo and Juliet'?", ["William Shakespeare", "Charles Dickens", "Jane Austen", "Mark Twain"], "William Shakespeare")
+            ];
+
+            // Set up all choice effects based on the Java code provided
+            allChoiceEffects = [
+                new ChoiceEffect("Get 10% more gold!", "PERCENTAGE_MULTIPLIER", 1.10),
+                new ChoiceEffect("Lose 15% of your gold!", "PERCENTAGE_MULTIPLIER", 0.85),
+                new ChoiceEffect("Get a 50 gold bonus!", "FLAT_AMOUNT", 50.0),
+                new ChoiceEffect("Lose 25 gold!", "FLAT_AMOUNT", -25.0)
+            ];
+        }
+
+        // Timer Logic
+        function startTimer() {
+            timeLeft = 300; // Reset to 5 minutes
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    endGame();
+                    const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+                    showMessage(translations[currentLang].timesUp, true);
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function shuffleQuestions() {
+            questionBank = [...allQuestions].sort(() => Math.random() - 0.5);
+        }
+
+        // Solo Game Logic
+        function startSoloGame() {
+            isSolo = true;
+            isHost = false;
+            
+            // Correctly hides the host-join-card and leaderboard section
+            hostJoinCard.classList.add('hidden');
+            leaderboardSection.classList.add('hidden');
+            
+            quizScreen.classList.remove('hidden');
+            gameStatsSidebar.classList.remove('hidden');
+            
+            gold = 500.0;
+            currentQuestionIndex = 0;
+            currentGoldDisplaySidebar.textContent = `$${gold.toFixed(2)}`;
+            
+            shuffleQuestions();
+            displayQuestion();
+            startTimer();
+        }
+
+        function displayQuestion() {
+            if (currentQuestionIndex >= questionBank.length) {
+                endGame();
+                return;
+            }
+
+            const currentQuestion = questionBank[currentQuestionIndex];
+            currentGoldDisplaySidebar.textContent = `$${gold.toFixed(2)}`;
+            questionTextElement.textContent = currentQuestion.questionText;
+            questionChoicesElement.innerHTML = '';
+
+            // Using Tailwind's color palette for a more vibrant look
+            const colors = ['bg-red-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500'];
+            currentQuestion.answerChoices.forEach((choice, index) => {
+                const button = document.createElement('button');
+                button.textContent = choice;
+                button.classList.add('question-button', 'p-6', 'rounded-xl', 'text-white', 'text-lg', 'font-bold', 'hover:opacity-80', 'transition-all', 'shadow-md', colors[index % colors.length]);
+                button.addEventListener('click', () => handleAnswer(button, choice, currentQuestion.correctAnswer));
+                questionChoicesElement.appendChild(button);
+            });
+        }
+
+        function handleAnswer(button, selectedAnswer, correctAnswer) {
+            const isCorrect = selectedAnswer === correctAnswer;
+            const allButtons = questionChoicesElement.querySelectorAll('.question-button');
+            allButtons.forEach(btn => {
+                btn.disabled = true;
+                if (btn.textContent === correctAnswer) {
+                    btn.classList.add('correct', 'shadow-lg');
+                } else if (btn === button) {
+                    btn.classList.add('incorrect', 'shadow-lg');
+                }
+            });
+
+            const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+
+            if (isCorrect) {
+                gold += 100; // Award gold for a correct answer
+                showMessage(translations[currentLang].correctAnswer);
+                setTimeout(() => {
+                    displayBonusChoices();
+                }, 2000);
+            } else {
+                gold -= 50; // Deduct 50 gold for an incorrect answer
+                showMessage(`${translations[currentLang].incorrectAnswer}${correctAnswer}`, true);
+                
+                // Move to the next question directly without showing the bonus screen
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    displayQuestion();
+                }, 2000);
+            }
+            
+            currentGoldDisplaySidebar.textContent = `$${gold.toFixed(2)}`;
+        }
+
+        function displayBonusChoices() {
+            quizScreen.classList.add('hidden');
+            bonusChoiceScreen.classList.remove('hidden');
+            bonusChoicesElement.innerHTML = '';
+
+            const shuffledEffects = [...allChoiceEffects].sort(() => Math.random() - 0.5);
+            const selectedBonusOptions = shuffledEffects.slice(0, 3);
+            
+            selectedBonusOptions.forEach((effect, index) => {
+                const button = document.createElement('button');
+                button.textContent = effect.description;
+                button.classList.add('bonus-choice-btn', 'w-full', 'bg-purple-600', 'hover:bg-purple-700', 'p-5', 'rounded-xl', 'text-white', 'text-xl', 'font-bold', 'shadow-md');
+                button.addEventListener('click', () => applyBonusEffect(effect));
+                bonusChoicesElement.appendChild(button);
+            });
+        }
+        
+        function applyBonusEffect(effect) {
+            const oldGold = gold;
+            gold = effect.applyEffect(gold);
+            const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+            showMessage(`You chose: ${effect.description}! Your gold changed from $${oldGold.toFixed(2)} to $${gold.toFixed(2)}.`);
+
+            currentGoldDisplaySidebar.textContent = `$${gold.toFixed(2)}`;
+
+            bonusChoiceScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            currentQuestionIndex++;
+            setTimeout(() => {
+                displayQuestion();
+            }, 1000);
+        }
+
+        function endGame() {
+            clearInterval(timerInterval); // Stop the timer
+            gameStatsSidebar.classList.add('hidden');
+            quizScreen.classList.add('hidden');
+            bonusChoiceScreen.classList.add('hidden'); // Ensure bonus screen is hidden
+            gameOverScreen.classList.remove('hidden');
+            const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+            finalScoreDisplay.textContent = `${translations[currentLang].finalScore}${gold.toFixed(2)}`;
+            if (!isSolo) {
+                // If it's a multiplayer game, show the leaderboard
+                leaderboardSection.classList.remove('hidden');
+                // updateLeaderboard(); // You would call this here
+            }
+        }
+        
+        function resetGame() {
+            // Hide all game screens and show the initial host/join screen
+            hostJoinScreen.classList.remove('hidden');
+            hostScreen.classList.add('hidden');
+            loginScreen.classList.add('hidden');
+            quizScreen.classList.add('hidden');
+            bonusChoiceScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            hostJoinCard.classList.remove('hidden');
+            leaderboardSection.classList.remove('hidden'); 
+            gameStatsSidebar.classList.add('hidden');
+            // Reset game state variables
+            isHost = false;
+            isSolo = false;
+            gamePin = null;
+            gold = 500.0;
+            currentQuestionIndex = 0;
+            timeLeft = 300;
+            clearInterval(timerInterval);
+            // Clear inputs
+            usernameInput.value = '';
+            pinInput.value = '';
+        }
+
+        // Host and Join Game Logic
+        const joinGame = async () => {
+            username = usernameInput.value.trim();
+            gamePin = pinInput.value.trim();
+            if (!username || !gamePin) {
+                const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+                showMessage(translations[currentLang].enterNamePin, true);
+                return;
+            }
+
+            const pinRef = doc(db, 'gamePins', gamePin);
+            try {
+                const docSnap = await getDoc(pinRef);
+                if (docSnap.exists() && docSnap.data().isHostOnline) {
+                    if (docSnap.data().isGameStarted) {
+                        const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+                        showMessage(translations[currentLang].gameStarted, true);
+                        return;
+                    }
+                    // Add player to the game
+                    const players = docSnap.data().players || [];
+                    players.push({ id: userId, name: username, gold: 500 });
+                    await updateDoc(pinRef, { players: players });
+
+                    loginScreen.classList.add('hidden');
+                    hostJoinCard.classList.add('hidden');
+                    quizScreen.classList.remove('hidden');
+                    gameStatsSidebar.classList.remove('hidden');
+                    showMessage(`Joined game with PIN ${gamePin}!`);
+                    startTimer();
+                    startGame();
+
+                    // Start listening for game state changes
+                    onSnapshot(pinRef, (doc) => {
+                        if (doc.data() && doc.data().isGameStarted) {
+                            startGame(); 
+                        }
+                    });
+                } else {
+                    const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+                    showMessage(translations[currentLang].invalidPin, true);
+                }
+            } catch (error) {
+                const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+                showMessage(translations[currentLang].errorJoin, true);
+                console.error("Error joining game: ", error);
+            }
+        };
+
+        const startGameAsHost = async () => {
+            if (!isHost) return;
+            const pinRef = doc(db, 'gamePins', String(gamePin));
+            try {
+                await updateDoc(pinRef, { isGameStarted: true });
+                hostScreen.classList.add('hidden');
+                hostJoinCard.classList.add('hidden');
+                quizScreen.classList.remove('hidden');
+                gameStatsSidebar.classList.remove('hidden');
+                startTimer();
+                startGame();
+            } catch (error) {
+                const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+                showMessage(translations[currentLang].failedStart, true);
+                console.error("Error starting game: ", error);
+            }
+        };
+        
+        function startGame() {
+            // This function now handles the start of the game for both solo and multiplayer.
+            // It will display the first question.
+            console.log("Game started!");
+            shuffleQuestions();
+            displayQuestion();
+        }
+
+        function authenticateUser() {
+            return new Promise((resolve, reject) => {
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                    } else {
+                        signInAnonymously(auth).then((result) => {
+                            userId = result.user.uid;
+                        }).catch((error) => {
+                            console.error("Anonymous sign-in failed", error);
+                        });
+                    }
+                    resolve();
+                });
+            });
+        }
+
+
+        // Event Listeners
+        volumeSlider.addEventListener('input', function() {
+            bgMusic.volume = this.value;
+        });
+
+        // Language Dropdown Logic
+        selectedLangDropdown.addEventListener('click', () => {
+            langOptionsList.classList.toggle('hidden');
+        });
+
+        langOptionsList.addEventListener('click', (e) => {
+            const lang = e.target.getAttribute('data-lang');
+            if (lang) {
+                changeLanguage(lang);
+                langOptionsList.classList.add('hidden');
+            }
+        });
+
+        hostGameBtnInitial.addEventListener('click', async () => {
+            resetGame();
+            hostJoinScreen.classList.add('hidden');
+            hostScreen.classList.remove('hidden');
+            isHost = true;
+            await generatePin(); // Generate PIN for the host
+        });
+
+        showJoinGameBtn.addEventListener('click', () => {
+            resetGame();
+            hostJoinScreen.classList.add('hidden');
+            loginScreen.classList.remove('hidden');
+        });
+        
+        soloPlayBtn.addEventListener('click', () => {
+            resetGame();
+            startSoloGame();
+        });
+
+        startHostedGameBtn.addEventListener('click', startGameAsHost);
+        startGameBtn.addEventListener('click', joinGame);
+        backToHostJoinBtn.addEventListener('click', resetGame);
+        backToHostJoinFromHostBtn.addEventListener('click', resetGame);
+        playAgainBtn.addEventListener('click', resetGame);
+
+        // Initialize on page load
+        window.onload = async () => {
+            initializeGameData();
+            await authenticateUser();
+            changeLanguage('en'); // Set initial language to English
+            hostJoinScreen.classList.remove('hidden');
+            leaderboardSection.classList.remove('hidden');
+        };
+    </script>
+</body>
+</html>
