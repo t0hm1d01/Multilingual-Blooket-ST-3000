@@ -473,27 +473,61 @@
         }
         
         function updateLeaderboard() {
-            // ... (your leaderboard update logic)
+
         }
 
         function initializeGameData() {
-            // Set up all questions based on the Java code provided
-            allQuestions = [
-                new Question("What is the capital of France?", ["Paris", "London", "Berlin", "Madrid"], "Paris"),
-                new Question("What is 2 + 2?", ["3", "4", "5", "6"], "4"),
-                new Question("Which planet is known as the Red Planet?", ["Earth", "Mars", "Jupiter", "Venus"], "Mars"),
-                new Question("What is the largest ocean on Earth?", ["Atlantic Ocean", "Indian Ocean", "Arctic Ocean", "Pacific Ocean"], "Pacific Ocean"),
-                new Question("Who wrote 'Romeo and Juliet'?", ["William Shakespeare", "Charles Dickens", "Jane Austen", "Mark Twain"], "William Shakespeare")
-            ];
+    allQuestions = [
+        // Algebra Questions (1-15)
+        new Question("If 3x + 5 = 17, what is the value of x?", ["4", "12", "6", "5"], "4"),
+        new Question("Solve for x: 2(x - 3) = 10", ["8", "5", "6", "13"], "8"),
+        new Question("If 5x - 7 = 23, what is x ?", ["6", "3", "7", "4"], "6"),
+        new Question("What are the solutions to the equation x^2 - 4x + 3 = 0?", ["1 and 3", "-1 and -3", "2 and -2", "1 and -3"], "1 and 3"),
+        new Question("Solve the inequality 2x + 1 > 7", ["x > 3", "x < 3", "x > 4", "x < 4"], "x > 3"),
+        new Question("If a line passes through the points (2, 5) and (4, 9), what is its slope?", ["2", "4", "1", "3"], "2"),
+        new Question("What is the value of x in the equation \\frac{x}{2} + 4 = 10?", ["12", "3", "6", "8"], "12"),
+        new Question("Simplify the expression 3x + 2y - x + 5y", ["2x + 7y", "4x + 7y", "2x + 3y", "4x + 3y"], "2x + 7y"),
+        new Question("If f(x) = x^2 - 3, what is f(4)?", ["13", "1", "16", "7"], "13"),
+        new Question("Factor the expression x^2 - 9", ["(x-3)(x+3)", "(x-3)^2", "(x-9)(x+9)", "(x+3)^2"], "(x-3)(x+3)"),
+        new Question("Solve for x: 3x - 8 = 10 - 3x", ["3", "6", "18", "1"], "3"),
+        new Question("What is the vertex of the parabola y = (x-2)^2 + 3?", ["(2, 3)", "(-2, 3)", "(2, -3)", "(-2, -3)"], "(2, 3)"),
+        new Question("If a = 5 and b = -2, what is the value of a^2 + 2b?", ["21", "29", "25", "23"], "21"),
+        new Question("What is the slope of the line perpendicular to y = 3x + 4?", ["-\\frac{1}{3}", "3", "1", "-\\frac{1}{4}"], "-\\frac{1}{3}"),
+        new Question("Which of the following is an equivalent expression to x^5 \\cdot x^3?", ["x^8", "x^{15}", "2x^8", "x^2"], "x^8"),
+
+        // Basic Java Questions (16-30)
+        new Question("Which of the following is a primitive data type in Java?", ["int", "String", "ArrayList", "Scanner"], "int"),
+        new Question("How do you declare an integer variable named 'score' and initialize it to 0?", ["int score = 0;", "score = 0;", "integer score = 0;", "declare int score = 0;"], "int score = 0;"),
+        new Question("What is the output of `System.out.println(10 / 3);`?", ["3", "3.333...", "3.0", "3.3"], "3"),
+        new Question("Which keyword is used to create a subclass in Java?", ["extends", "implements", "inherits", "subclass"], "extends"),
+        new Question("What is the correct syntax for a `for` loop that runs 5 times?", ["for (int i = 0; i < 5; i++)", "for (i = 0; i <= 5; i++)", "for (int i = 5; i > 0; i--)", "for (i = 1; i < 5; i++)"], "for (int i = 0; i < 5; i++)"),
+        new Question("What is the result of the expression `5 == 5`?", ["true", "false", "5", "Error"], "true"),
+        new Question("What is the purpose of the `main` method in a Java program?", ["It is the entry point of the program.", "It is used for creating new objects.", "It defines class variables.", "It handles exceptions."], "It is the entry point of the program."),
+        new Question("Which of the following is NOT a valid Java variable name?", ["1st_name", "myVariable", "user_name", "firstName"], "1st_name"),
+        new Question("What is the output of `System.out.println(\"Hello\" + 10);`?", ["Hello10", "Hello", "10", "Error"], "Hello10"),
+        new Question("Which access modifier makes a variable accessible only within its own class?", ["private", "public", "protected", "default"], "private"),
+        new Question("How do you create an object of a class named 'Car'?", ["Car myCar = new Car();", "new Car myCar;", "create Car myCar;", "Car myCar = Car.create();"], "Car myCar = new Car();"),
+        new Question("What is the keyword used to define a constant variable in Java?", ["final", "const", "static", "constant"], "final"),
+        new Question("What does the `else` block do in an `if-else` statement?", ["It executes when the `if` condition is false.", "It executes regardless of the `if` condition.", "It is always executed before the `if` block.", "It is used for error handling."], "It executes when the `if` condition is false."),
+        new Question("How do you get the length of a string named `myString`?", ["myString.length()", "myString.length", "length(myString)", "myString.size()"], "myString.length()"),
+        new Question("What is an `interface` in Java?", ["A blueprint of a class.", "A type of variable.", "A data structure.", "A special type of loop."], "A blueprint of a class.")
+    ];
 
             // Set up all choice effects based on the Java code provided
             allChoiceEffects = [
-                new ChoiceEffect("Get 10% more gold!", "PERCENTAGE_MULTIPLIER", 1.10),
-                new ChoiceEffect("Lose 15% of your gold!", "PERCENTAGE_MULTIPLIER", 0.85),
-                new ChoiceEffect("Get a 50 gold bonus!", "FLAT_AMOUNT", 50.0),
-                new ChoiceEffect("Lose 25 gold!", "FLAT_AMOUNT", -25.0)
-            ];
-        }
+        new ChoiceEffect("+200% Gold", "PERCENTAGE_MULTIPLIER", 3.0),
+        new ChoiceEffect("+300% Gold", "PERCENTAGE_MULTIPLIER", 4.0),
+        new ChoiceEffect("-99% Gold", "PERCENTAGE_MULTIPLIER", 0.01),
+        new ChoiceEffect("-20% Gold", "PERCENTAGE_MULTIPLIER", 0.8),
+        new ChoiceEffect("-50% Gold", "PERCENTAGE_MULTIPLIER", 0.5),
+        new ChoiceEffect("+250 Gold", "FLAT_AMOUNT", 250.0),
+        new ChoiceEffect("+10 Gold", "FLAT_AMOUNT", 10.0),
+        new ChoiceEffect("+500 Gold", "FLAT_AMOUNT", 500.0),
+        new ChoiceEffect("-100 Gold", "FLAT_AMOUNT", -100.0),
+        new ChoiceEffect("-200 Gold", "FLAT_AMOUNT", -200.0),
+        new ChoiceEffect("No Change", "FLAT_AMOUNT", 0.0)
+    ];
+}
 
         // Timer Logic
         function startTimer() {
