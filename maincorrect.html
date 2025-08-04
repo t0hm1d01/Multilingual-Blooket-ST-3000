@@ -608,7 +608,7 @@
             
             selectedBonusOptions.forEach((effect, index) => {
                 const button = document.createElement('button');
-                button.textContent = effect.description;
+                button.textContent = "Mystery Button";
                 button.classList.add('bonus-choice-btn', 'w-full', 'bg-purple-600', 'hover:bg-purple-700', 'p-5', 'rounded-xl', 'text-white', 'text-xl', 'font-bold', 'shadow-md');
                 button.addEventListener('click', () => applyBonusEffect(effect));
                 bonusChoicesElement.appendChild(button);
@@ -816,4 +816,5 @@
         };
     </script>
 </body>
+
 </html>
