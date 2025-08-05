@@ -55,9 +55,6 @@ nav {
 /* logo image size */
 .logo img {
     width: 90px;
-    position: absolute;
-    left: -200px; /* Adjusted for better alignment */
-    margin-top: -45px; /* Adjusted for better alignment */
     /* position: relative; Remove absolute positioning from here */
     /* right: 150px; */
 }
@@ -143,7 +140,7 @@ nav {
     gap: 8px;
     position: absolute;
     top: 50%; /* Center vertically in header */
-    right: 110px;
+    right: 5px;
     transform: translateY(-50%);
     /* Adjust for vertical centering */
 }
@@ -295,4 +292,43 @@ nav {
 
 #music {
     display: none; /* Hide the audio element */
+}
+
+/* Search bar styles */
+.search {
+    --padding: 14px;
+
+
+    width: max-content;
+    display: flex;
+    align-items: center;
+    padding: var(--padding);
+    border-radius: 28px;
+    background-color: #f6f6f6;
+    transition: box-shadow 0.25s;
+
+}
+
+.search:focus-within {
+    box-shadow:  0 0 2px rgba(0, 0, 0, 0.75);
+}
+
+.search input {
+    font-size: 16px;
+    font-family: 'lexend', sans-serif;
+    color: #333333;
+    margin-left: var(--padding);
+    outline: none;
+    border: none;
+    background: transparent;
+    width: 300px;
+
+
+
+}
+
+.search input::placeholder,
+.search-icon {
+    color: rgba(0, 0, 0, 0.5);
+    
 }

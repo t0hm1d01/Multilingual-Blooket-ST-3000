@@ -84,164 +84,58 @@ public class MainBlooketConsoleQuiz {
         input.close(); 
     }
 
-
-private static void initializeGameData() {
-    questionBank = new ArrayList<>();
-
-    // Algebra Questions (1-15)
-    questionBank.add(new Question(
-        "If 3x + 5 = 17, what is the value of x?",
-        Arrays.asList("4", "12", "6", "5"),
-        "4"
-    ));
-    questionBank.add(new Question(
-        "Solve for x: 2(x - 3) = 10",
-        Arrays.asList("8", "5", "6", "13"),
-        "8"
-    ));
-    questionBank.add(new Question(
-        "If 5x - 7 = 23, what is x ?",
-        Arrays.asList("6", "3", "7", "4"),
-        "6"
-    ));
-    questionBank.add(new Question(
-        "What are the solutions to the equation x^2 - 4x + 3 = 0?",
-        Arrays.asList("1 and 3", "-1 and -3", "2 and -2", "1 and -3"),
-        "1 and 3"
-    ));
-    questionBank.add(new Question(
-        "Solve the inequality 2x + 1 > 7",
-        Arrays.asList("x > 3", "x < 3", "x > 4", "x < 4"),
-        "x > 3"
-    ));
-    questionBank.add(new Question(
-        "If a line passes through the points (2, 5) and (4, 9), what is its slope?",
-        Arrays.asList("2", "4", "1", "3"),
-        "2"
-    ));
-    questionBank.add(new Question(
-        "What is the value of x in the equation \\frac{x}{2} + 4 = 10?",
-        Arrays.asList("12", "3", "6", "8"),
-        "12"
-    ));
-    questionBank.add(new Question(
-        "Simplify the expression 3x + 2y - x + 5y",
-        Arrays.asList("2x + 7y", "4x + 7y", "2x + 3y", "4x + 3y"),
-        "2x + 7y"
-    ));
-    questionBank.add(new Question(
-        "If f(x) = x^2 - 3, what is f(4)?",
-        Arrays.asList("13", "1", "16", "7"),
-        "13"
-    ));
-    questionBank.add(new Question(
-        "Factor the expression x^2 - 9",
-        Arrays.asList("(x-3)(x+3)", "(x-3)^2", "(x-9)(x+9)", "(x+3)^2"),
-        "(x-3)(x+3)"
-    ));
-    questionBank.add(new Question(
-        "Solve for x: 3x - 8 = 10 - 3x",
-        Arrays.asList("3", "6", "18", "1"),
-        "3"
-    ));
-    questionBank.add(new Question(
-        "What is the vertex of the parabola y = (x-2)^2 + 3?",
-        Arrays.asList("(2, 3)", "(-2, 3)", "(2, -3)", "(-2, -3)"),
-        "(2, 3)"
-    ));
-    questionBank.add(new Question(
-        "If a = 5 and b = -2, what is the value of a^2 + 2b?",
-        Arrays.asList("21", "29", "25", "23"),
-        "21"
-    ));
-    questionBank.add(new Question(
-        "What is the slope of the line perpendicular to y = 3x + 4?",
-        Arrays.asList("-\\frac{1}{3}", "3", "1", "-\\frac{1}{4}"),
-        "-\\frac{1}{3}"
-    ));
-    questionBank.add(new Question(
-        "Which of the following is an equivalent expression to x^5 \\cdot x^3?",
-        Arrays.asList("x^8", "x^{15}", "2x^8", "x^2"),
-        "x^8"
-    ));
-
-    // Basic Java Questions (16-30)
-    questionBank.add(new Question(
-        "Which of the following is a primitive data type in Java?",
-        Arrays.asList("int", "String", "ArrayList", "Scanner"),
-        "int"
-    ));
-    questionBank.add(new Question(
-        "How do you declare an integer variable named 'score' and initialize it to 0?",
-        Arrays.asList("int score = 0;", "score = 0;", "integer score = 0;", "declare int score = 0;"),
-        "int score = 0;"
-    ));
-    questionBank.add(new Question(
-        "What is the output of `System.out.println(10 / 3);`?",
-        Arrays.asList("3", "3.333...", "3.0", "3.3"),
-        "3"
-    ));
-    questionBank.add(new Question(
-        "Which keyword is used to create a subclass in Java?",
-        Arrays.asList("extends", "implements", "inherits", "subclass"),
-        "extends"
-    ));
-    questionBank.add(new Question(
-        "What is the correct syntax for a `for` loop that runs 5 times?",
-        Arrays.asList("for (int i = 0; i < 5; i++)", "for (i = 0; i <= 5; i++)", "for (int i = 5; i > 0; i--)", "for (i = 1; i < 5; i++)"),
-        "for (int i = 0; i < 5; i++)"
-    ));
-    questionBank.add(new Question(
-        "What is the result of the expression `5 == 5`?",
-        Arrays.asList("true", "false", "5", "Error"),
-        "true"
-    ));
-    questionBank.add(new Question(
-        "What is the purpose of the `main` method in a Java program?",
-        Arrays.asList("It is the entry point of the program.", "It is used for creating new objects.", "It defines class variables.", "It handles exceptions."),
-        "It is the entry point of the program."
-    ));
-    questionBank.add(new Question(
-        "Which of the following is NOT a valid Java variable name?",
-        Arrays.asList("1st_name", "myVariable", "user_name", "firstName"),
-        "1st_name"
-    ));
-    questionBank.add(new Question(
-        "What is the output of `System.out.println(\"Hello\" + 10);`?",
-        Arrays.asList("Hello10", "Hello", "10", "Error"),
-        "Hello10"
-    ));
-    questionBank.add(new Question(
-        "Which access modifier makes a variable accessible only within its own class?",
-        Arrays.asList("private", "public", "protected", "default"),
-        "private"
-    ));
-    questionBank.add(new Question(
-        "How do you create an object of a class named 'Car'?",
-        Arrays.asList("Car myCar = new Car();", "new Car myCar;", "create Car myCar;", "Car myCar = Car.create();"),
-        "Car myCar = new Car();"
-    ));
-    questionBank.add(new Question(
-        "What is the keyword used to define a constant variable in Java?",
-        Arrays.asList("final", "const", "static", "constant"),
-        "final"
-    ));
-    questionBank.add(new Question(
-        "What does the `else` block do in an `if-else` statement?",
-        Arrays.asList("It executes when the `if` condition is false.", "It executes regardless of the `if` condition.", "It is always executed before the `if` block.", "It is used for error handling."),
-        "It executes when the `if` condition is false."
-    ));
-    questionBank.add(new Question(
-        "How do you get the length of a string named `myString`?",
-        Arrays.asList("myString.length()", "myString.length", "length(myString)", "myString.size()"),
-        "myString.length()"
-    ));
-    questionBank.add(new Question(
-        "What is an `interface` in Java?",
-        Arrays.asList("A blueprint of a class.", "A type of variable.", "A data structure.", "A special type of loop."),
-        "A blueprint of a class."
-    ));
-}
+    private static void initializeGameData() {
+        questionBank = new ArrayList<>();
+        questionBank.add(new Question(
+            "What is the capital of France?",
+            Arrays.asList("Paris", "Berlin", "Madrid", "Rome"),
+            "Paris"
+        ));
+        questionBank.add(new Question(
+            "Which planet is known as the 'Red Planet'?",
+            Arrays.asList("Mars", "Earth", "Jupiter", "Venus"),
+            "Mars"
+        ));
+        questionBank.add(new Question(
+            "What is 7 + 8?",
+            Arrays.asList("15", "12", "16", "14"),
+            "15"
+        ));
+        questionBank.add(new Question(
+            "Who painted the Mona Lisa?",
+            Arrays.asList("Leonardo da Vinci", "Vincent van Gogh", "Pablo Picasso", "Claude Monet"),
+            "Leonardo da Vinci"
+        ));
+        questionBank.add(new Question(
+            "What is the largest ocean on Earth?",
+            Arrays.asList("Pacific Ocean", "Atlantic Ocean", "Indian Ocean", "Arctic Ocean"),
+            "Pacific Ocean"
+        ));
+        questionBank.add(new Question(
+            "What is the chemical symbol for water?",
+            Arrays.asList("H2O", "CO2", "O2", "N2"),
+            "H2O"
+        ));
+        questionBank.add(new Question(
+            "What is the fastest land animal?",
+            Arrays.asList("Cheetah", "Lion", "Gazelle", "Horse"),
+            "Cheetah"
+        ));
+        questionBank.add(new Question(
+            "How many continents are there?",
+            Arrays.asList("7", "5", "6", "8"),
+            "7"
+        ));
+        questionBank.add(new Question(
+            "What is the square root of 81?",
+            Arrays.asList("9", "8", "7", "10"),
+            "9"
+        ));
+        questionBank.add(new Question(
+            "Which gas do plants absorb from the atmosphere?",
+            Arrays.asList("Carbon Dioxide", "Oxygen", "Nitrogen", "Hydrogen"),
+            "Carbon Dioxide"
+        ));
 
 
         allChoiceEffects = new ArrayList<>();

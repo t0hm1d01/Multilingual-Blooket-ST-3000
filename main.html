@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Blooket</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F4E3; /* A soft, complementary cream color */
+        }
+        .question-button {
+            transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+        }
+        .question-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .question-button.correct {
+            background-color: #10B981 !important; /* Green-500 */
+        }
+        .question-button.incorrect {
+            background-color: #EF4444 !important; /* Red-500 */
+        }
+        .bonus-choice-btn {
+            transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+        }
+        .bonus-choice-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <header class="bg-[#A4C2C4] h-20 w-full flex items-center justify-between p-4 shadow-lg">
+        <div class="flex items-center space-x-4">
+            <div class="logo">
+                <img src="https://cdn.worldvectorlogo.com/logos/st-1.svg" alt="ST Logo" class="h-12">
+            </div>
+            <div class="volumeSlider flex items-center space-x-2">
+                <label for="volume" class="text-gray-700">Volume:</label>
+                <input type="range" id="volume" min="0" max="1" step="0.01" value="0.5">
+            </div>
+        </div>
+        <div class="lang-menu relative">
+            <div id="selected-lang-dropdown" class="selected-lang bg-white text-gray-800 py-2 px-4 rounded-lg shadow-sm cursor-pointer flex items-center space-x-2 hover:bg-gray-200">
+                <span id="current-lang-display">English</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <ul id="lang-options" class="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg hidden z-10">
+                <li><a href="#" class="block px-4 py-2 hover:bg-gray-100 rounded-t-lg" data-lang="en">English</a></li>
+                <li><a href="#" class="block px-4 py-2 hover:bg-gray-100" data-lang="es">Español</a></li>
+                <li><a href="#" class="block px-4 py-2 hover:bg-gray-100" data-lang="de">Deutsch</a></li>
+                <li><a href="#" class="block px-4 py-2 hover:bg-gray-100 rounded-b-lg" data-lang="fr">Français</a></li>
+            </ul>
+        </div>
+    </header>
+
+    <main class="container flex-grow flex p-4">
+        <!-- Left Sidebar for Game Stats -->
+        <aside id="game-stats-sidebar" class="w-1/4 bg-white p-6 rounded-lg shadow-md mr-8 hidden">
+            <h2 class="text-2xl font-bold mb-4 text-center">Game Stats</h2>
+            <div class="space-y-4">
+                <div class="bg-gray-100 p-4 rounded-lg text-center">
+                    <h3 class="text-lg font-semibold">Time Remaining</h3>
+                    <p id="timer-display" class="text-3xl font-mono mt-2">05:00</p>
+                </div>
+                <div class="bg-gray-100 p-4 rounded-lg text-center">
+                    <h3 class="text-lg font-semibold" data-i18n="currentGold">Current Gold</h3>
+                    <p id="current-gold-display-sidebar" class="text-3xl font-bold text-yellow-500 mt-2">$500.00</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Message Box for displaying status and errors -->
+        <div id="message-box" class="fixed top-4 left-1/2 -translate-x-1/2 p-4 rounded-lg shadow-lg text-white text-center z-50 hidden">
+            <span id="message-text"></span>
+        </div>
+
+        <div class="flex-grow flex items-center justify-center">
+            <!-- Game Card (Host, Join, or Solo) -->
+            <section id="host-join-card" class="bg-white p-8 rounded-lg shadow-md max-w-sm w-full text-center">
+                <h1 class="text-2xl font-bold mb-4" data-i18n="chooseRole">Choose Your Role</h1>
+                <div id="host-join-screen" class="space-y-4">
+                    <button id="host-game-btn-initial" class="bg-blue-500 text-white font-bold py-3 px-6 rounded-lg w-full hover:bg-blue-600 transition-colors" data-i18n="hostGameBtn">Host Game</button>
+                    <button id="show-join-game-btn" class="bg-green-500 text-white font-bold py-3 px-6 rounded-lg w-full hover:bg-green-600 transition-colors" data-i18n="joinGameBtn">Join Game</button>
+                    <button id="solo-play-btn" class="bg-purple-500 text-white font-bold py-3 px-6 rounded-lg w-full hover:bg-purple-600 transition-colors" data-i18n="soloPlayBtn">Solo Play</button>
+                    <p class="text-sm text-gray-500 mt-4" data-i18n="hostJoinTip">
+                        Host to create a new game and get a PIN, or Join an existing game with a PIN.
+                    </p>
+                </div>
+
+                <!-- Host Screen -->
+                <div id="host-screen" class="hidden space-y-4 text-center">
+                    <h2 class="text-xl font-bold" data-i18n="youAreHost">You are the Host</h2>
+                    <p data-i18n="sharePin">Share this PIN with your friends:</p>
+                    <div class="bg-gray-200 text-5xl font-mono py-3 px-6 rounded-lg tracking-widest" id="game-pin"></div>
+                    <div id="players-list-host" class="mt-4 p-3 bg-gray-100 rounded-lg shadow-inner">
+                        <h3 class="text-lg font-semibold mb-2" data-i18n="playersJoined">Players Joined:</h3>
+                        <ul id="host-players-list" class="list-disc list-inside text-left">
+                            <!-- Player names will be dynamically added here -->
+                        </ul>
+                    </div>
+                    <button id="start-hosted-game-btn" class="bg-green-500 text-white font-bold py-3 px-6 rounded-lg w-full hover:bg-green-600 transition-colors" data-i18n="startGameBtn">Start Game</button>
+                    <button id="back-to-host-join-from-host-btn" class="bg-gray-500 text-white font-bold py-3 px-6 rounded-lg w-full hover:bg-gray-600 transition-colors" data-i18n="backBtn">Back</button>
+                </div>
+
+                <!-- Login Screen (for joining) -->
+                <div id="login-screen" class="hidden space-y-4 text-center">
+                    <h2 class="text-2xl font-bold" data-i18n="joinGameTitle">Join Game</h2>
+                    <input type="text" id="username-input" placeholder="Enter your name" class="border-2 border-gray-300 p-3 rounded-lg w-full" data-i18n-placeholder="enterNamePlaceholder">
+                    <input type="text" id="pin-input" placeholder="Enter Game PIN" class="border-2 border-gray-300 p-3 rounded-lg w-full" data-i18n-placeholder="enterPinPlaceholder">
+                    <div class="flex justify-center space-x-4">
+                        <button id="start-game-btn" class="bg-green-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-600 transition-colors" data-i18n="joinBtn">Join</button>
+                        <button id="back-to-host-join-btn" class="bg-gray-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-gray-600 transition-colors" data-i18n="backBtn">Back</button>
+                    </div>
+                </div>
+            </section>
+        
+            <!-- Quiz Screen -->
+            <section id="quiz-screen" class="hidden text-center space-y-8 p-6 rounded-lg shadow-xl bg-white max-w-2xl mx-auto w-full">
+                <div class="bg-gray-100 p-6 rounded-lg shadow-inner">
+                    <h2 id="question-text" class="text-3xl font-bold mb-4 text-gray-800"></h2>
+                </div>
+                <div id="question-choices" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Choices will be dynamically added here -->
+                </div>
+            </section>
+
+            <!-- Bonus Choice Screen -->
+            <section id="bonus-choice-screen" class="hidden text-center space-y-6 p-6 rounded-lg shadow-xl bg-white max-w-xl mx-auto w-full">
+                <h2 class="text-3xl font-bold text-purple-600" data-i18n="chooseBonusTitle">Choose a Bonus!</h2>
+                <div id="bonus-choices" class="space-y-4">
+                    <!-- Bonus choices will be dynamically added here -->
+                </div>
+            </section>
+            
+            <!-- Game Over Screen -->
+            <section id="game-over-screen" class="hidden text-center space-y-6 p-6 rounded-lg shadow-xl bg-white max-w-md mx-auto w-full">
+                <h2 class="text-4xl font-bold text-red-600" data-i18n="gameOverTitle">Game Over!</h2>
+                <p id="final-score" class="text-2xl text-gray-700" data-i18n="finalScore">Your final gold: $0.00</p>
+                <button id="play-again-btn" class="bg-blue-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-600 transition-colors" data-i18n="playAgainBtn">Play Again</button>
+            </section>
+
+            <!-- Leaderboard Card (Hidden by default for solo mode) -->
+            <section id="leaderboard-section" class="bg-white p-8 rounded-lg shadow-md max-w-sm w-full hidden">
+                <h2 class="text-2xl font-bold mb-4 text-center" data-i18n="leaderboardTitle">Leaderboard</h2>
+                <div id="leaderboard-content" class="text-center">
+                    <p id="leaderboard-loading" class="text-gray-500" data-i18n="loadingLeaderboard">Loading leaderboard...</p>
+                    <ul id="leaderboard-list" class="space-y-2 text-left hidden">
+                        <!-- Leaderboard items will be dynamically added here -->
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </main>
+    
+    <!-- Updated Firebase SDKs to the modular version -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, collection, query, where, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+        apiKey: "AIzaSyC9XoNDsTaqHcCn3gv9rU9fHQbOeH-10U0",
+        authDomain: "multilingual-bloocket-3000.firebaseapp.com",
+        projectId: "multilingual-bloocket-3000",
+        storageBucket: "multilingual-bloocket-3000.firebasestorage.app",
+        messagingSenderId: "566691790847",
+        appId: "1:566691790847:web:c0345cb1a99467dd4631ca",
+        measurementId: "G-KNBY3BWK3X"
+        };
+    
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        // DOM Elements
+        const hostJoinCard = document.getElementById('host-join-card');
+        const hostJoinScreen = document.getElementById('host-join-screen');
+        const hostScreen = document.getElementById('host-screen');
+        const loginScreen = document.getElementById('login-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const bonusChoiceScreen = document.getElementById('bonus-choice-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const leaderboardSection = document.getElementById('leaderboard-section');
+        const gameStatsSidebar = document.getElementById('game-stats-sidebar');
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+
+        const hostGameBtnInitial = document.getElementById('host-game-btn-initial');
+        const showJoinGameBtn = document.getElementById('show-join-game-btn');
+        const soloPlayBtn = document.getElementById('solo-play-btn');
+        const startHostedGameBtn = document.getElementById('start-hosted-game-btn');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const backToHostJoinBtn = document.getElementById('back-to-host-join-btn');
+        const backToHostJoinFromHostBtn = document.getElementById('back-to-host-join-from-host-btn');
+        const playAgainBtn = document.getElementById('play-again-btn');
+
+        const gamePinDisplay = document.getElementById('game-pin');
+        const usernameInput = document.getElementById('username-input');
+        const pinInput = document.getElementById('pin-input');
+        const hostPlayersList = document.getElementById('host-players-list');
+        const leaderboardList = document.getElementById('leaderboard-list');
+        const leaderboardLoading = document.getElementById('leaderboard-loading');
+        const timerDisplay = document.getElementById('timer-display');
+        const currentGoldDisplaySidebar = document.getElementById('current-gold-display-sidebar');
+
+        const questionTextElement = document.getElementById('question-text');
+        const questionChoicesElement = document.getElementById('question-choices');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const bonusChoicesElement = document.getElementById('bonus-choices');
+
+        const volumeSlider = document.getElementById('volume');
+        const bgMusic = new Audio('Cash - Mark Karan, Scott Guberman, Angeline Saris, Jeremy Hoenig.mp3');
+        bgMusic.loop = true;
+
+        let musicStarted = false;
+        document.body.addEventListener('click', () => {
+            if (!musicStarted) {
+                bgMusic.play();
+                musicStarted = true;
+            }
+        });
+
+        // Language Elements
+        const currentLangDisplay = document.getElementById('current-lang-display');
+        const langOptionsList = document.getElementById('lang-options');
+        const selectedLangDropdown = document.getElementById('selected-lang-dropdown');
+        
+        // Game State Variables
+        let isHost = false;
+        let isSolo = false;
+        let gamePin = null;
+        let userId = null;
+        let username = null;
+        let gold = 500.0;
+        let questionBank = [];
+        let currentQuestionIndex = 0;
+        let allChoiceEffects = [];
+        let allQuestions = [];
+        let timerInterval;
+        let timeLeft = 300; // 5 minutes in seconds
+        
+        const langMap = {
+            'en': 'English',
+            'es': 'Español',
+            'de': 'Deutsch',
+            'fr': 'Français'
+        };
+
+        // Class to represent a single question (from Questions.java)
+        class Question {
+            constructor(questionText, answerChoices, correctAnswer) {
+                this.questionText = questionText;
+                this.answerChoices = [...answerChoices];
+                this.correctAnswer = correctAnswer;
+                this.answerChoices.sort(() => Math.random() - 0.5); // Shuffle choices
+            }
+
+            isCorrect(selectedAnswer) {
+                return this.correctAnswer.trim().toLowerCase() === selectedAnswer.trim().toLowerCase();
+            }
+        }
+
+        // Class to represent a choice effect (from ChoiceEfects.java)
+        class ChoiceEffect {
+            constructor(description, type, value) {
+                this.description = description;
+                this.type = type;
+                this.value = value;
+            }
+
+            applyEffect(currentGold) {
+                if (this.type === 'PERCENTAGE_MULTIPLIER') {
+                    return currentGold * this.value;
+                } else {
+                    return currentGold + this.value;
+                }
+            }
+        }
+
+
+        // Utility functions
+        function showMessage(text, isError = false) {
+            messageText.textContent = text;
+            messageBox.className = `fixed top-4 left-1/2 -translate-x-1/2 p-4 rounded-lg shadow-lg text-white text-center z-50 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+            messageBox.classList.remove('hidden');
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 3000);
+        }
+        
+        async function generatePin() {
+            let pin = Math.floor(100000 + Math.random() * 900000);
+            gamePinDisplay.textContent = pin;
+            try {
+                await setDoc(doc(db, 'gamePins', String(pin)), {
+                    isHostOnline: true,
+                    players: [],
+                    isGameStarted: false
+                });
+                gamePin = pin;
+                const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+                showMessage(translations[currentLang].pinGenerated.replace('{{pin}}', pin));
+                return pin;
+            } catch (error) {
+                console.error("Error generating PIN: ", error);
+                const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+                showMessage(translations[currentLang].errorPin, true);
+                throw error;
+            }
+        }
+        
+        // Language and other initial setup (from your original files)
+        const translations = {
+            'en': {
+                'chooseRole': 'Choose Your Role',
+                'hostGameBtn': 'Host Game',
+                'joinGameBtn': 'Join Game',
+                'soloPlayBtn': 'Solo Play',
+                'hostJoinTip': 'Host to create a new game and get a PIN, or Join an existing game with a PIN.',
+                'youAreHost': 'You are the Host',
+                'sharePin': 'Share this PIN with your friends:',
+                'playersJoined': 'Players Joined:',
+                'startGameBtn': 'Start Game',
+                'backBtn': 'Back',
+                'joinGameTitle': 'Join Game',
+                'enterNamePlaceholder': 'Enter your name',
+                'enterPinPlaceholder': 'Enter Game PIN',
+                'joinBtn': 'Join',
+                'leaderboardTitle': 'Leaderboard',
+                'loadingLeaderboard': 'Loading leaderboard...',
+                'currentGold': 'Current Gold',
+                'chooseBonusTitle': 'Choose a Bonus!',
+                'gameOverTitle': 'Game Over!',
+                'finalScore': 'Your final gold: $',
+                'playAgainBtn': 'Play Again',
+                'invalidPin': 'Invalid PIN or host not online.',
+                'gameStarted': 'Game has already started.',
+                'enterNamePin': 'Please enter a name and PIN.',
+                'pinGenerated': 'Game PIN {{pin}} generated successfully!',
+                'errorPin': 'Error generating PIN.',
+                'errorJoin': 'Error joining game.',
+                'failedStart': 'Failed to start game.',
+                'correctAnswer': 'Correct! You earned gold.',
+                'incorrectAnswer': 'Incorrect. You lose 50 gold. The correct answer was: ', // Updated message
+                'timesUp': 'Time is up!'
+            },
+            'es': {
+                'chooseRole': 'Elige tu rol',
+                'hostGameBtn': 'Organizar juego',
+                'joinGameBtn': 'Unirse a juego',
+                'soloPlayBtn': 'Jugar en solitario',
+                'hostJoinTip': 'Organiza para crear un nuevo juego y obtener un PIN, o únete a un juego existente con un PIN.',
+                'youAreHost': 'Eres el anfitrión',
+                'sharePin': 'Comparte este PIN con tus amigos:',
+                'playersJoined': 'Jugadores unidos:',
+                'startGameBtn': 'Iniciar juego',
+                'backBtn': 'Atrás',
+                'joinGameTitle': 'Unirse a juego',
+                'enterNamePlaceholder': 'Introduce tu nombre',
+                'enterPinPlaceholder': 'Introduce el PIN del juego',
+                'joinBtn': 'Unirse',
+                'leaderboardTitle': 'Clasificación',
+                'loadingLeaderboard': 'Cargando clasificación...',
+                'currentGold': 'Oro actual',
+                'chooseBonusTitle': '¡Elige un bono!',
+                'gameOverTitle': '¡Fin del juego!',
+                'finalScore': 'Tu oro final: $',
+                'playAgainBtn': 'Jugar de nuevo',
+                'invalidPin': 'PIN inválido o el anfitrión no está en línea.',
+                'gameStarted': 'El juego ya ha comenzado.',
+                'enterNamePin': 'Por favor, introduce un nombre y un PIN.',
+                'pinGenerated': '¡PIN del juego {{pin}} generado con éxito!',
+                'errorPin': 'Error al generar el PIN.',
+                'errorJoin': 'Error al unirse al juego.',
+                'failedStart': 'Error al iniciar el juego.',
+                'correctAnswer': '¡Correcto! Ganaste oro.',
+                'incorrectAnswer': 'Incorrecto. Pierdes 50 de oro. La respuesta correcta fue: ', // Updated message
+                'timesUp': '¡Se acabó el tiempo!'
+            },
+            'de': {
+                'chooseRole': 'Wähle deine Rolle',
+                'hostGameBtn': 'Spiel hosten',
+                'joinGameBtn': 'Spiel beitreten',
+                'soloPlayBtn': 'Solo spielen',
+                'hostJoinTip': 'Hoste, um ein neues Spiel zu erstellen und einen PIN zu erhalten, oder trete einem bestehenden Spiel mit einem PIN bei.',
+                'youAreHost': 'Du bist der Host',
+                'sharePin': 'Teile diesen PIN mit deinen Freunden:',
+                'playersJoined': 'Spieler beigetreten:',
+                'startGameBtn': 'Spiel starten',
+                'backBtn': 'Zurück',
+                'joinGameTitle': 'Spiel beitreten',
+                'enterNamePlaceholder': 'Gib deinen Namen ein',
+                'enterPinPlaceholder': 'Gib den Spiel-PIN ein',
+                'joinBtn': 'Beitreten',
+                'leaderboardTitle': 'Bestenliste',
+                'loadingLeaderboard': 'Bestenliste wird geladen...',
+                'currentGold': 'Aktuelles Gold',
+                'chooseBonusTitle': 'Wähle einen Bonus!',
+                'gameOverTitle': 'Spiel vorbei!',
+                'finalScore': 'Dein endgültiges Gold: $',
+                'playAgainBtn': 'Nochmal spielen',
+                'invalidPin': 'Ungültiger PIN oder Host ist nicht online.',
+                'gameStarted': 'Das Spiel hat bereits begonnen.',
+                'enterNamePin': 'Bitte gib einen Namen und PIN ein.',
+                'pinGenerated': 'Spiel-PIN {{pin}} erfolgreich generiert!',
+                'errorPin': 'Fehler beim Generieren des PINs.',
+                'errorJoin': 'Fehler beim Beitreten des Spiels.',
+                'failedStart': 'Fehler beim Starten des Spiels.',
+                'correctAnswer': 'Richtig! Du hast Gold verdient.',
+                'incorrectAnswer': 'Falsch. Du verlierst 50 Gold. Die richtige Antwort war: ', // Updated message
+                'timesUp': 'Zeit ist um!'
+            },
+            'fr': {
+                'chooseRole': 'Choisis ton rôle',
+                'hostGameBtn': 'Héberger un jeu',
+                'joinGameBtn': 'Rejoindre un jeu',
+                'soloPlayBtn': 'Jouer en solo',
+                'hostJoinTip': 'Héberge pour créer une nouvelle partie et obtenir un PIN, ou rejoins une partie existante avec un PIN.',
+                'youAreHost': 'Tu es l\'hôte',
+                'sharePin': 'Partage ce PIN avec tes amis:',
+                'playersJoined': 'Joueurs rejoints:',
+                'startGameBtn': 'Démarrer le jeu',
+                'backBtn': 'Retour',
+                'joinGameTitle': 'Rejoindre un jeu',
+                'enterNamePlaceholder': 'Entrez votre nom',
+                'enterPinPlaceholder': 'Entrez le PIN du jeu',
+                'joinBtn': 'Rejoindre',
+                'leaderboardTitle': 'Classement',
+                'loadingLeaderboard': 'Chargement du classement...',
+                'currentGold': 'Or actuel',
+                'chooseBonusTitle': 'Choisis un bonus!',
+                'gameOverTitle': 'Partie terminée!',
+                'finalScore': 'Ton or final: $',
+                'playAgainBtn': 'Rejouer',
+                'invalidPin': 'PIN invalide ou l\'hôte n\'est pas en ligne.',
+                'gameStarted': 'La partie a déjà commencé.',
+                'enterNamePin': 'Veuillez entrer un nom et un PIN.',
+                'pinGenerated': 'PIN de jeu {{pin}} généré avec succès!',
+                'errorPin': 'Erreur lors de la génération du PIN.',
+                'errorJoin': 'Erreur lors de la jonction au jeu.',
+                'failedStart': 'Échec du démarrage du jeu.',
+                'correctAnswer': 'Correct ! Tu as gagné de l\'or.',
+                'incorrectAnswer': 'Incorrect. Tu perds 50 d\'or. La bonne réponse était: ', // Updated message
+                'timesUp': 'Le temps est écoulé !'
+            }
+        };
+
+        function changeLanguage(lang) {
+            currentLangDisplay.textContent = langMap[lang];
+            const elements = document.querySelectorAll('[data-i18n]');
+            elements.forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    element.textContent = translations[lang][key];
+                }
+            });
+        initializeGameData(lang);
+        // If the quiz screen is visible, reset and show the first question in the new language
+        if (!quizScreen.classList.contains('hidden')) {
+            gold = 500.0;
+            currentQuestionIndex = 0;
+            shuffleQuestions();
+            displayQuestion();
+            currentGoldDisplaySidebar.textContent = `$${gold.toFixed(2)}`;
+        }
+            const placeholders = document.querySelectorAll('[data-i18n-placeholder]');
+            placeholders.forEach(element => {
+                const key = element.getAttribute('data-i18n-placeholder');
+                if (translations[lang] && translations[lang][key]) {
+                    element.placeholder = translations[lang][key];
+                }
+            });
+        }
+        
+        function updateLeaderboard() {
+
+        }
+
+        function initializeGameData(lang = "en") {
+            allQuestions = questionsByLanguage[lang] || questionsByLanguage['en'];
+
+            // Set up all choice effects based on the Java code provided
+            allChoiceEffects = [
+        new ChoiceEffect("+200% Gold", "PERCENTAGE_MULTIPLIER", 3.0),
+        new ChoiceEffect("+300% Gold", "PERCENTAGE_MULTIPLIER", 4.0),
+        new ChoiceEffect("-99% Gold", "PERCENTAGE_MULTIPLIER", 0.01),
+        new ChoiceEffect("-20% Gold", "PERCENTAGE_MULTIPLIER", 0.8),
+        new ChoiceEffect("-50% Gold", "PERCENTAGE_MULTIPLIER", 0.5),
+        new ChoiceEffect("+250 Gold", "FLAT_AMOUNT", 250.0),
+        new ChoiceEffect("+10 Gold", "FLAT_AMOUNT", 10.0),
+        new ChoiceEffect("+500 Gold", "FLAT_AMOUNT", 500.0),
+        new ChoiceEffect("-100 Gold", "FLAT_AMOUNT", -100.0),
+        new ChoiceEffect("-200 Gold", "FLAT_AMOUNT", -200.0),
+        new ChoiceEffect("No Change", "FLAT_AMOUNT", 0.0)
+    ];
+}
+
+    const questionsByLanguage ={
+        en: [
+
+        /* Algebra Questions */
+        new Question("If 3x + 5 = 17, what is the value of x?", ["4", "12", "6", "5"], "4"),
+        new Question("Solve for x: 2(x - 3) = 10", ["8", "5", "6", "13"], "8"),
+        new Question("If 5x - 7 = 23, what is x ?", ["6", "3", "7", "4"], "6"),
+        new Question("What are the solutions to the equation x^2 - 4x + 3 = 0?", ["1 and 3", "-1 and -3", "2 and -2", "1 and -3"], "1 and 3"),
+        new Question("Solve the inequality 2x + 1 > 7", ["x > 3", "x < 3", "x > 4", "x < 4"], "x > 3"),
+        new Question("If a line passes through the points (2, 5) and (4, 9), what is its slope?", ["2", "4", "1", "3"], "2"),
+        new Question("What is the value of x in the equation \\frac{x}{2} + 4 = 10?", ["12", "3", "6", "8"], "12"),
+        new Question("Simplify the expression 3x + 2y - x + 5y", ["2x + 7y", "4x + 7y", "2x + 3y", "4x + 3y"], "2x + 7y"),
+        new Question("If f(x) = x^2 - 3, what is f(4)?", ["13", "1", "16", "7"], "13"),
+        new Question("Factor the expression x^2 - 9", ["(x-3)(x+3)", "(x-3)^2", "(x-9)(x+9)", "(x+3)^2"], "(x-3)(x+3)"),
+        new Question("Solve for x: 3x - 8 = 10 - 3x", ["3", "6", "18", "1"], "3"),
+        new Question("What is the vertex of the parabola y = (x-2)^2 + 3?", ["(2, 3)", "(-2, 3)", "(2, -3)", "(-2, -3)"], "(2, 3)"),
+        new Question("If a = 5 and b = -2, what is the value of a^2 + 2b?", ["21", "29", "25", "23"], "21"),
+        new Question("What is the slope of the line perpendicular to y = 3x + 4?", ["-\\frac{1}{3}", "3", "1", "-\\frac{1}{4}"], "-\\frac{1}{3}"),
+        new Question("Which of the following is an equivalent expression to x^5 \\cdot x^3?", ["x^8", "x^{15}", "2x^8", "x^2"], "x^8"),
+
+        /* java Questions*/
+        new Question("Which of the following is a primitive data type in Java?", ["int", "String", "ArrayList", "Scanner"], "int"),
+        new Question("How do you declare an integer variable named 'score' and initialize it to 0?", ["int score = 0;", "score = 0;", "integer score = 0;", "declare int score = 0;"], "int score = 0;"),
+        new Question("What is the output of `System.out.println(10 / 3);`?", ["3", "3.333...", "3.0", "3.3"], "3"),
+        new Question("Which keyword is used to create a subclass in Java?", ["extends", "implements", "inherits", "subclass"], "extends"),
+        new Question("What is the correct syntax for a `for` loop that runs 5 times?", ["for (int i = 0; i < 5; i++)", "for (i = 0; i <= 5; i++)", "for (int i = 5; i > 0; i--)", "for (i = 1; i < 5; i++)"], "for (int i = 0; i < 5; i++)"),
+        new Question("What is the result of the expression `5 == 5`?", ["true", "false", "5", "Error"], "true"),
+        new Question("What is the purpose of the `main` method in a Java program?", ["It is the entry point of the program.", "It is used for creating new objects.", "It defines class variables.", "It handles exceptions."], "It is the entry point of the program."),
+        new Question("Which of the following is NOT a valid Java variable name?", ["1st_name", "myVariable", "user_name", "firstName"], "1st_name"),
+        new Question("What is the output of `System.out.println(\"Hello\" + 10);`?", ["Hello10", "Hello", "10", "Error"], "Hello10"),
+        new Question("Which access modifier makes a variable accessible only within its own class?", ["private", "public", "protected", "default"], "private"),
+        new Question("How do you create an object of a class named 'Car'?", ["Car myCar = new Car();", "new Car myCar;", "create Car myCar;", "Car myCar = Car.create();"], "Car myCar = new Car();"),
+        new Question("What is the keyword used to define a constant variable in Java?", ["final", "const", "static", "constant"], "final"),
+        new Question("What does the `else` block do in an `if-else` statement?", ["It executes when the `if` condition is false.", "It executes regardless of the `if` condition.", "It is always executed before the `if` block.", "It is used for error handling."], "It executes when the `if` condition is false."),
+        new Question("How do you get the length of a string named `myString`?", ["myString.length()", "myString.length", "length(myString)", "myString.size()"], "myStrihng.length()"),
+        new Question("What is an `interface` in Java?", ["A blueprint of a class.", "A type of variable.", "A data structure.", "A special type of loop."], "A blueprint of a class.")
+
+        ],
+        es:[
+         /* Algebra Questions */
+        new Question("Si 3x + 5 = 17, ¿cuál es el valor de x?", ["4", "12", "6", "5"], "4"),
+        new Question("Resuelve para x: 2(x - 3) = 10", ["8", "5", "6", "13"], "8"),
+        new Question("Si 5x - 7 = 23, ¿cuál es x ?", ["6", "3", "7", "4"], "6"),
+        new Question("¿Cuáles son las soluciones a la ecuación x^2 - 4x + 3 = 0?", ["1 and 3", "-1 and -3", "2 and -2", "1 and -3"], "1 and 3"),
+        new Question("Resuelve la desigualdad 2x + 1 > 7", ["x > 3", "x < 3", "x > 4", "x < 4"], "x > 3"),
+        new Question("Si una línea pasa por los puntos (2, 5) y (4, 9), ¿cuál es su pendiente?", ["2", "4", "1", "3"], "2"),
+        new Question("¿Cuál es el valor de x en la ecuación \\frac{x}{2} + 4 = 10?", ["12", "3", "6", "8"], "12"),
+        new Question("Simplifica la expresión 3x + 2y - x + 5y", ["2x + 7y", "4x + 7y", "2x + 3y", "4x + 3y"], "2x + 7y"),
+        new Question("Si f(x) = x^2 - 3, ¿cuál es f(4)?", ["13", "1", "16", "7"], "13"),
+        new Question("Factoriza la expresión x^2 - 9", ["(x-3)(x+3)", "(x-3)^2", "(x-9)(x+9)", "(x+3)^2"], "(x-3)(x+3)"),
+        new Question("Resuelve para x: 3x - 8 = 10 - 3x", ["3", "6", "18", "1"], "3"),
+        new Question("¿Cuál es el vértice de la parábola y = (x-2)^2 + 3?", ["(2, 3)", "(-2, 3)", "(2, -3)", "(-2, -3)"], "(2, 3)"),
+        new Question("Si a = 5 y b = -2, ¿cuál es el valor de a^2 + 2b?", ["21", "29", "25", "23"], "21"),
+        new Question("¿Cuál es la pendiente de la línea perpendicular a y = 3x + 4?", ["-\\frac{1}{3}", "3", "1", "-\\frac{1}{4}"], "-\\frac{1}{3}"),
+        new Question("¿Cuál de las siguientes es una expresión equivalente a x^5 \\cdot x^3?", ["x^8", "x^{15}", "2x^8", "x^2"], "x^8"),
+
+        /* java Questions*/
+        new Question("¿Cuál de los siguientes es un tipo de dato primitivo en Java?", ["int", "String", "ArrayList", "Scanner"], "int"),
+        new Question("¿Cómo se declara una variable entera llamada 'score' y se inicializa a 0?", ["int score = 0;", "score = 0;", "integer score = 0;", "declare int score = 0;"], "int score = 0;"),
+        new Question("¿Cuál es la salida de `System.out.println(10 / 3);`?", ["3", "3.333...", "3.0", "3.3"], "3"),
+        new Question("¿Qué palabra clave se utiliza para crear una subclase en Java?", ["extends", "implements", "inherits", "subclass"], "extends"),
+        new Question("¿Cuál es la sintaxis correcta para un bucle `for` que se ejecuta 5 veces?", ["for (int i = 0; i < 5; i++)", "for (i = 0; i <= 5; i++)", "for (int i = 5; i > 0; i--)", "for (i = 1; i < 5; i++)"], "for (int i = 0; i < 5; i++)"),
+        new Question("¿Cuál es el resultado de la expresión `5 == 5`?", ["true", "false", "5", "Error"], "true"),
+        new Question("¿Cuál es el propósito del método `main` en un programa Java?", ["Es el punto de entrada del programa.", "Se utiliza para crear nuevos objetos.", "Define variables de clase.", "Maneja excepciones."], "It is the entry point of the program."),
+        new Question("¿Cuál de los siguientes NO es un nombre de variable Java válido?", ["1st_name", "myVariable", "user_name", "firstName"], "1st_name"),
+        new Question("¿Cuál es la salida de `System.out.println(\"Hello\" + 10);`?", ["Hello10", "Hello", "10", "Error"], "Hello10"),
+        new Question("¿Qué modificador de acceso hace que una variable sea accesible solo dentro de su propia clase?", ["private", "public", "protected", "default"], "private"),
+        new Question("¿Cómo se crea un objeto de una clase llamada 'Car'?", ["Car myCar = new Car();", "new Car myCar;", "create Car myCar;", "Car myCar = Car.create();"], "Car myCar = new Car();"),
+        new Question("¿Qué palabra clave se utiliza para definir una variable constante en Java?", ["final", "const", "static", "constant"], "final"),
+        new Question("¿Qué hace el bloque `else` en una declaración `if-else`?", ["Se ejecuta cuando la condición `if` es falsa.", "Se ejecuta independientemente de la condición `if`.", "Siempre se ejecuta antes del bloque `if`.", "Se utiliza para manejar errores."], "It executes when the `if` condition is false."),
+        new Question("¿Cómo se obtiene la longitud de una cadena llamada `myString`?", ["myString.length()", "myString.length", "length(myString)", "myString.size()"], "myString.length()"),
+        new Question("¿Qué es una `interface` en Java?", ["Un plano de una clase.", "Un tipo de variable.", "Una estructura de datos.", "Un tipo especial de bucle."], "A blueprint of a class.")
+        ],
+
+        de:[
+
+         /* Algebra Questions */
+        new Question("Wenn 3x + 5 = 17, was ist der Wert von x?", ["4", "12", "6", "5"], "4"),
+        new Question("Löse nach x auf: 2(x - 3) = 10", ["8", "5", "6", "13"], "8"),
+        new Question("Wenn 5x - 7 = 23, was ist x?", ["6", "3", "7", "4"], "6"),
+        new Question("Was sind die Lösungen für die Gleichung x^2 - 4x + 3 = 0?", ["1 and 3", "-1 and -3", "2 and -2", "1 and -3"], "1 and 3"),
+        new Question("Löse die Ungleichung 2x + 1 > 7", ["x > 3", "x < 3", "x > 4", "x < 4"], "x > 3"),
+        new Question("Wenn eine Linie durch die Punkte (2, 5) und (4, 9) geht, was ist ihre Steigung?", ["2", "4", "1", "3"], "2"),
+        new Question("Was ist der Wert von x in der Gleichung \\frac{x}{2} + 4 = 10?", ["12", "3", "6", "8"], "12"),
+        new Question("Vereinfache den Ausdruck 3x + 2y - x + 5y", ["2x + 7y", "4x + 7y", "2x + 3y", "4x + 3y"], "2x + 7y"),
+        new Question("Wenn f(x) = x^2 - 3, was ist f(4)?", ["13", "1", "16", "7"], "13"),
+        new Question("Faktorisiere den Ausdruck x^2 - 9", ["(x-3)(x+3)", "(x-3)^2", "(x-9)(x+9)", "(x+3)^2"], "(x-3)(x+3)"),
+        new Question("Löse nach x auf: 3x - 8 = 10 - 3x", ["3", "6", "18", "1"], "3"),
+        new Question("Was ist der Scheitelpunkt der Parabel y = (x-2)^2 + 3?", ["(2, 3)", "(-2, 3)", "(2, -3)", "(-2, -3)"], "(2, 3)"),
+        new Question("Wenn a = 5 und b = -2, was ist der Wert von a^2 + 2b?", ["21", "29", "25", "23"], "21"),
+        new Question("Was ist die Steigung der Linie, die senkrecht zu y = 3x + 4 steht?", ["-\\frac{1}{3}", "3", "1", "-\\frac{1}{4}"], "-\\frac{1}{3}"),
+        new Question("Welcher der folgenden Ausdrücke ist äquivalent zu x^5 \\cdot x^3?", ["x^8", "x^{15}", "2x^8", "x^2"], "x^8"),
+
+        /* java Questions*/
+        new Question("Wat is een primitief gegevenstype in Java?", ["int", "String", "ArrayList", "Scanner"], "int"),
+        new Question("Hoe declareer je een integer variabele met de naam 'score' en initialiseer je deze op 0?", ["int score = 0;", "score = 0;", "integer score = 0;", "declare int score = 0;"], "int score = 0;"),
+        new Question("Wat is de uitvoer van `System.out.println(10 / 3);`?", ["3", "3.333...", "3.0", "3.3"], "3"),
+        new Question("Welk trefwoord wordt gebruikt om een subklasse in Java te maken?", ["extends", "implements", "inherits", "subclass"], "extends"),
+        new Question("Wat is de juiste syntaxis voor een `for` loop die 5 keer loopt?", ["for (int i = 0; i < 5; i++)", "for (i = 0; i <= 5; i++)", "for (int i = 5; i > 0; i--)", "for (i = 1; i < 5; i++)"], "for (int i = 0; i < 5; i++)"),
+        new Question("Wat is het resultaat van de uitdrukking `5 == 5`?", ["true", "false", "5", "Error"], "true"),
+        new Question("Wat is het doel van de `main` methode in een Java-programma?", ["Het is het startpunt van het programma.", "Het wordt gebruikt voor het maken van nieuwe objecten.", "Het definieert klassevariabelen.", "Het behandelt uitzonderingen."], "It is the entry point of the program."),
+        new Question("Welke van de volgende is GEEN geldige Java-variabelenaam?", ["1st_name", "myVariable", "user_name", "firstName"], "1st_name"),
+        new Question("Wat is de uitvoer van `System.out.println(\"Hello\" + 10);`?", ["Hello10", "Hello", "10", "Error"], "Hello10"),
+        new Question("Welke toegangsaanpassing maakt een variabele alleen toegankelijk binnen zijn eigen klasse?", ["private", "public", "protected", "default"], "private"),
+        new Question("Hoe maak je een object van een klasse genaamd 'Car'?", ["Car myCar = new Car();", "new Car myCar;", "create Car myCar;", "Car myCar = Car.create();"], "Car myCar = new Car();"),
+        new Question("Welk trefwoord wordt gebruikt om een constante variabele in Java te definiëren?", ["final", "const", "static", "constant"], "final"),
+        new Question("Wat doet het `else` blok in een `if-else` statement?", ["Het wordt uitgevoerd wanneer de `if`-conditie onwaar is.", "Het wordt uitgevoerd ongeacht de `if`-conditie.", "Het wordt altijd uitgevoerd vóór het `if`-blok.", "Het wordt gebruikt voor foutafhandeling."], "It executes when the `if` condition is false."),
+        new Question("Hoe krijg je de lengte van een string met de naam `myString`?", ["myString.length()", "myString.length", "length(myString)", "myString.size()"], "myString.length()"),
+        new Question("Wat is een `interface` in Java?", ["Een blauwdruk van een klasse.", "Een type variabele.", "Een datastructuur.", "Een speciaal type loop."], "A blueprint of a class.")
+        ],
+
+
+        fr:[
+         /* Algebra Questions */
+        new Question("Si 3x + 5 = 17, quelle est la valeur de x?", ["4", "12", "6", "5"], "4"),
+        new Question("Résolvez pour x : 2(x - 3) = 10", ["8", "5", "6", "13"], "8"),
+        new Question("Si 5x - 7 = 23, quelle est la valeur de x?", ["6", "3", "7", "4"], "6"),
+        new Question("Quelles sont les solutions de l'équation x^2 - 4x + 3 = 0?", ["1 and 3", "-1 and -3", "2 and -2", "1 and -3"], "1 and 3"),
+        new Question("Résolvez l'inégalité 2x + 1 > 7", ["x > 3", "x < 3", "x > 4", "x < 4"], "x > 3"),
+        new Question("Si une ligne passe par les points (2, 5) et (4, 9), quelle est sa pente?", ["2", "4", "1", "3"], "2"),
+        new Question("Quelle est la valeur de x dans l'équation \\frac{x}{2} + 4 = 10?", ["12", "3", "6", "8"], "12"),
+        new Question("Simplifiez l'expression 3x + 2y - x + 5y", ["2x + 7y", "4x + 7y", "2x + 3y", "4x + 3y"], "2x + 7y"),
+        new Question("Si f(x) = x^2 - 3, quelle est la valeur de f(4)?", ["13", "1", "16", "7"], "13"),
+        new Question("Factorisez l'expression x^2 - 9", ["(x-3)(x+3)", "(x-3)^2", "(x-9)(x+9)", "(x+3)^2"], "(x-3)(x+3)"),
+        new Question("Résolvez pour x : 3x - 8 = 10 - 3x", ["3", "6", "18", "1"], "3"),
+        new Question("Quel est le sommet de la parabole y = (x-2)^2 + 3?", ["(2, 3)", "(-2, 3)", "(2, -3)", "(-2, -3)"], "(2, 3)"),
+        new Question("Si a = 5 et b = -2, quelle est la valeur de a^2 + 2b?", ["21", "29", "25", "23"], "21"),
+        new Question("Quelle est la pente de la ligne perpendiculaire à y = 3x + 4?", ["-\\frac{1}{3}", "3", "1", "-\\frac{1}{4}"], "-\\frac{1}{3}"),
+        new Question("Laquelle des expressions suivantes est équivalente à x^5 \\cdot x^3?", ["x^8", "x^{15}", "2x^8", "x^2"], "x^8"),
+
+        /* java Questions*/
+         new Question("Lequel des éléments suivants est un type de données primitif en Java?", ["int", "String", "ArrayList", "Scanner"], "int"),
+        new Question("Comment déclarez-vous une variable entière nommée 'score' et l'initialisez-vous à 0?", ["int score = 0;", "score = 0;", "integer score = 0;", "declare int score = 0;"], "int score = 0;"),
+        new Question("Quel est le résultat de `System.out.println(10 / 3);`?", ["3", "3.333...", "3.0", "3.3"], "3"),
+        new Question("Quel mot-clé est utilisé pour créer une sous-classe en Java?", ["extends", "implements", "inherits", "subclass"], "extends"),
+        new Question("Quelle est la syntaxe correcte pour une boucle `for` qui s'exécute 5 fois?", ["for (int i = 0; i < 5; i++)", "for (i = 0; i <= 5; i++)", "for (int i = 5; i > 0; i--)", "for (i = 1; i < 5; i++)"], "for (int i = 0; i < 5; i++)"),
+        new Question("Quel est le résultat de l'expression `5 == 5`?", ["true", "false", "5", "Error"], "true"),
+        new Question("Quel est le but de la méthode `main` dans un programme Java?", ["C'est le point d'entrée du programme.", "Il est utilisé pour créer de nouveaux objets.", "Il définit les variables de classe.", "Il gère les exceptions."], "It is the entry point of the program."),
+        new Question("Lequel des noms de variables Java suivants n'est PAS valide?", ["1st_name", "myVariable", "user_name", "firstName"], "1st_name"),
+        new Question("Quel est le résultat de `System.out.println(\"Hello\" + 10);`?", ["Hello10", "Hello", "10", "Error"], "Hello10"),
+        new Question("Quel modificateur d'accès rend une variable accessible uniquement dans sa propre classe?", ["private", "public", "protected", "default"], "private"),
+        new Question("Comment créez-vous un objet d'une classe nommée 'Car'?", ["Car myCar = new Car();", "new Car myCar;", "create Car myCar;", "Car myCar = Car.create();"], "Car myCar = new Car();"),
+        new Question("Quel mot-clé est utilisé pour définir une variable constante en Java?", ["final", "const", "static", "constant"], "final"),
+        new Question("Que fait le bloc `else` dans une instruction `if-else`?", ["Il s'exécute lorsque la condition `if` est fausse.", "Il s'exécute quelle que soit la condition `if`.", "Il est toujours exécuté avant le bloc `if`.", "Il est utilisé pour la gestion des erreurs."], "It executes when the `if` condition is false."),
+        new Question("Comment obtenez-vous la longueur d'une chaîne nommée `myString`?", ["myString.length()", "myString.length", "length(myString)", "myString.size()"], "myString.length()"),
+        new Question("Qu'est-ce qu'une `interface` en Java?", ["Un plan d'une classe.", "Un type de variable.", "Une structure de données.", "Un type de boucle spécial."], "A blueprint of a class.")
+
+        ],
+    };
+
+        // Timer Logic
+        function startTimer() {
+            timeLeft = 300; // Reset to 5 minutes
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    endGame();
+                    const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+                    showMessage(translations[currentLang].timesUp, true);
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function shuffleQuestions() {
+            questionBank = [...allQuestions].sort(() => Math.random() - 0.5);
+        }
+
+        // Solo Game Logic
+        function startSoloGame() {
+            isSolo = true;
+            isHost = false;
+            
+            // Correctly hides the host-join-card and leaderboard section
+            hostJoinCard.classList.add('hidden');
+            leaderboardSection.classList.add('hidden');
+            
+            quizScreen.classList.remove('hidden');
+            gameStatsSidebar.classList.remove('hidden');
+            
+            gold = 500.0;
+            currentQuestionIndex = 0;
+            currentGoldDisplaySidebar.textContent = `$${gold.toFixed(2)}`;
+            
+            shuffleQuestions();
+            displayQuestion();
+            startTimer();
+        }
+
+        function displayQuestion() {
+            if (currentQuestionIndex >= questionBank.length) {
+                endGame();
+                return;
+            }
+
+            const currentQuestion = questionBank[currentQuestionIndex];
+            currentGoldDisplaySidebar.textContent = `$${gold.toFixed(2)}`;
+            questionTextElement.textContent = currentQuestion.questionText;
+            questionChoicesElement.innerHTML = '';
+
+            // Using Tailwind's color palette for a more vibrant look
+            const colors = ['bg-red-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500'];
+            currentQuestion.answerChoices.forEach((choice, index) => {
+                const button = document.createElement('button');
+                button.textContent = choice;
+                button.classList.add('question-button', 'p-6', 'rounded-xl', 'text-white', 'text-lg', 'font-bold', 'hover:opacity-80', 'transition-all', 'shadow-md', colors[index % colors.length]);
+                button.addEventListener('click', () => handleAnswer(button, choice, currentQuestion.correctAnswer));
+                questionChoicesElement.appendChild(button);
+            });
+        }
+
+        function handleAnswer(button, selectedAnswer, correctAnswer) {
+            const isCorrect = selectedAnswer === correctAnswer;
+            const allButtons = questionChoicesElement.querySelectorAll('.question-button');
+            allButtons.forEach(btn => {
+                btn.disabled = true;
+                if (btn.textContent === correctAnswer) {
+                    btn.classList.add('correct', 'shadow-lg');
+                } else if (btn === button) {
+                    btn.classList.add('incorrect', 'shadow-lg');
+                }
+            });
+
+            const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+
+            if (isCorrect) {
+                gold += 100; // Award gold for a correct answer
+                showMessage(translations[currentLang].correctAnswer);
+                setTimeout(() => {
+                    displayBonusChoices();
+                }, 2000);
+            } else {
+                gold -= 50; // Deduct 50 gold for an incorrect answer
+                showMessage(`${translations[currentLang].incorrectAnswer}${correctAnswer}`, true);
+                
+                // Move to the next question directly without showing the bonus screen
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    displayQuestion();
+                }, 2000);
+            }
+            
+            currentGoldDisplaySidebar.textContent = `$${gold.toFixed(2)}`;
+        }
+
+        function displayBonusChoices() {
+            quizScreen.classList.add('hidden');
+            bonusChoiceScreen.classList.remove('hidden');
+            bonusChoicesElement.innerHTML = '';
+
+            const shuffledEffects = [...allChoiceEffects].sort(() => Math.random() - 0.5);
+            const selectedBonusOptions = shuffledEffects.slice(0, 3);
+            
+            selectedBonusOptions.forEach((effect, index) => {
+                const button = document.createElement('button');
+                button.textContent = "Mystery Button";
+                button.classList.add('bonus-choice-btn', 'w-full', 'bg-purple-600', 'hover:bg-purple-700', 'p-5', 'rounded-xl', 'text-white', 'text-xl', 'font-bold', 'shadow-md');
+                button.addEventListener('click', () => applyBonusEffect(effect));
+                bonusChoicesElement.appendChild(button);
+            });
+        }
+        
+        function applyBonusEffect(effect) {
+            const oldGold = gold;
+            gold = effect.applyEffect(gold);
+            const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+            showMessage(`You chose: ${effect.description}! Your gold changed from $${oldGold.toFixed(2)} to $${gold.toFixed(2)}.`);
+
+            currentGoldDisplaySidebar.textContent = `$${gold.toFixed(2)}`;
+
+            bonusChoiceScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            currentQuestionIndex++;
+            setTimeout(() => {
+                displayQuestion();
+            }, 1000);
+        }
+
+        function endGame() {
+            clearInterval(timerInterval); // Stop the timer
+            gameStatsSidebar.classList.add('hidden');
+            quizScreen.classList.add('hidden');
+            bonusChoiceScreen.classList.add('hidden'); // Ensure bonus screen is hidden
+            gameOverScreen.classList.remove('hidden');
+            const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+            finalScoreDisplay.textContent = `${translations[currentLang].finalScore}${gold.toFixed(2)}`;
+            if (!isSolo) {
+                // If it's a multiplayer game, show the leaderboard
+                leaderboardSection.classList.remove('hidden');
+                // updateLeaderboard(); // You would call this here
+            }
+        }
+        
+        function resetGame() {
+            // Hide all game screens and show the initial host/join screen
+            hostJoinScreen.classList.remove('hidden');
+            hostScreen.classList.add('hidden');
+            loginScreen.classList.add('hidden');
+            quizScreen.classList.add('hidden');
+            bonusChoiceScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            hostJoinCard.classList.remove('hidden');
+            leaderboardSection.classList.remove('hidden'); 
+            gameStatsSidebar.classList.add('hidden');
+            // Reset game state variables
+            isHost = false;
+            isSolo = false;
+            gamePin = null;
+            gold = 500.0;
+            currentQuestionIndex = 0;
+            timeLeft = 300;
+            clearInterval(timerInterval);
+            // Clear inputs
+            usernameInput.value = '';
+            pinInput.value = '';
+        }
+
+        // Host and Join Game Logic
+        const joinGame = async () => {
+            username = usernameInput.value.trim();
+            gamePin = pinInput.value.trim();
+            if (!username || !gamePin) {
+                const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+                showMessage(translations[currentLang].enterNamePin, true);
+                return;
+            }
+
+            const pinRef = doc(db, 'gamePins', gamePin);
+            try {
+                const docSnap = await getDoc(pinRef);
+                if (docSnap.exists() && docSnap.data().isHostOnline) {
+                    if (docSnap.data().isGameStarted) {
+                        const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+                        showMessage(translations[currentLang].gameStarted, true);
+                        return;
+                    }
+                    // Add player to the game
+                    const players = docSnap.data().players || [];
+                    players.push({ id: userId, name: username, gold: 500 });
+                    await updateDoc(pinRef, { players: players });
+
+                    loginScreen.classList.add('hidden');
+                    hostJoinCard.classList.add('hidden');
+                    quizScreen.classList.remove('hidden');
+                    gameStatsSidebar.classList.remove('hidden');
+                    showMessage(`Joined game with PIN ${gamePin}!`);
+                    startTimer();
+                    startGame();
+
+                    // Start listening for game state changes
+                    onSnapshot(pinRef, (doc) => {
+                        if (doc.data() && doc.data().isGameStarted) {
+                            startGame(); 
+                        }
+                    });
+                } else {
+                    const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+                    showMessage(translations[currentLang].invalidPin, true);
+                }
+            } catch (error) {
+                const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+                showMessage(translations[currentLang].errorJoin, true);
+                console.error("Error joining game: ", error);
+            }
+        };
+
+        const startGameAsHost = async () => {
+            if (!isHost) return;
+            const pinRef = doc(db, 'gamePins', String(gamePin));
+            try {
+                await updateDoc(pinRef, { isGameStarted: true });
+                hostScreen.classList.add('hidden');
+                hostJoinCard.classList.add('hidden');
+                quizScreen.classList.remove('hidden');
+                gameStatsSidebar.classList.remove('hidden');
+                startTimer();
+                startGame();
+            } catch (error) {
+                const currentLang = currentLangDisplay.textContent === 'English' ? 'en' : 'es';
+                showMessage(translations[currentLang].failedStart, true);
+                console.error("Error starting game: ", error);
+            }
+        };
+        
+        function startGame() {
+            // This function now handles the start of the game for both solo and multiplayer.
+            // It will display the first question.
+            console.log("Game started!");
+            shuffleQuestions();
+            displayQuestion();
+        }
+
+        function authenticateUser() {
+            return new Promise((resolve, reject) => {
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                    } else {
+                        signInAnonymously(auth).then((result) => {
+                            userId = result.user.uid;
+                        }).catch((error) => {
+                            console.error("Anonymous sign-in failed", error);
+                        });
+                    }
+                    resolve();
+                });
+            });
+        }
+
+
+        // Event Listeners
+        volumeSlider.addEventListener('input', function() {
+            bgMusic.volume = this.value;
+        });
+
+        // Language Dropdown Logic
+        selectedLangDropdown.addEventListener('click', () => {
+            langOptionsList.classList.toggle('hidden');
+        });
+
+        langOptionsList.addEventListener('click', (e) => {
+            const lang = e.target.getAttribute('data-lang');
+            if (lang) {
+                changeLanguage(lang);
+                langOptionsList.classList.add('hidden');
+            }
+        });
+
+        hostGameBtnInitial.addEventListener('click', async () => {
+            resetGame();
+            hostJoinScreen.classList.add('hidden');
+            hostScreen.classList.remove('hidden');
+            isHost = true;
+            await generatePin(); // Generate PIN for the host
+        });
+
+        showJoinGameBtn.addEventListener('click', () => {
+            resetGame();
+            hostJoinScreen.classList.add('hidden');
+            loginScreen.classList.remove('hidden');
+        });
+        
+        soloPlayBtn.addEventListener('click', () => {
+            resetGame();
+            startSoloGame();
+        });
+
+        startHostedGameBtn.addEventListener('click', startGameAsHost);
+        startGameBtn.addEventListener('click', joinGame);
+        backToHostJoinBtn.addEventListener('click', resetGame);
+        backToHostJoinFromHostBtn.addEventListener('click', resetGame);
+        playAgainBtn.addEventListener('click', resetGame);
+
+        // Initialize on page load
+        window.onload = async () => {
+            initializeGameData();
+            await authenticateUser();
+            changeLanguage('en'); // Set initial language to English
+            hostJoinScreen.classList.remove('hidden');
+            leaderboardSection.classList.remove('hidden');
+        };
+    </script>
+</body>
+
+</html>
